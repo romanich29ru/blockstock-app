@@ -69,7 +69,7 @@
 <div class="card" id="levels"><div class="err">—</div></div>
 
 <div class="foot">
-  Источник: MOEX ISS · обновление каждые 30 с<br>
+  Источник: MOEX ISS · задержка публичных данных ~15 мин<br>автообновление каждые 30 с<br>
   Не инвестиционная рекомендация
 </div>
 
@@ -274,7 +274,7 @@ function refresh(){
         }
         var t = '';
         for(var key in q){ t = q[key].time; break; }
-        document.getElementById('stamp').textContent = 'MOEX ' + (t || '') + ' · обновлено ' + new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+        document.getElementById('stamp').textContent = 'MOEX ' + (t || '') + ' · задержка ~15 мин · обновлено ' + new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
       });
     }
   });
