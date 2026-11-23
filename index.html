@@ -86,6 +86,9 @@
   }
   .btn:active{transform:scale(.985)}
   .btn[disabled]{opacity:.55;box-shadow:none}
+  .btn.ghost{background:var(--card2);color:var(--text);box-shadow:none;border:1px solid var(--line);margin-top:8px;font-weight:600;font-size:14px}
+  .steps{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.85}
+  .steps b{color:var(--accent);font-weight:700}
   .hint{color:var(--muted);font-size:12px;line-height:1.55;margin-top:10px}
   .err{color:var(--down);font-size:13px;padding:10px 0}
   .foot{color:var(--muted);font-size:11px;text-align:center;line-height:1.6;margin-top:20px}
@@ -132,6 +135,12 @@
     <div class="chips" id="folders"></div>
     <input type="text" id="noteTags" placeholder="теги через запятую (необязательно)">
     <button class="btn" id="sendNote">Отправить в vault</button>
+        <button class="btn ghost" id="copyNote">Скопировать текст заметки</button>
+        <div class="steps">
+          <div><b>1.</b> Напиши заметку и выбери папку</div>
+          <div><b>2.</b> Нажми «Отправить в vault» — откроется чат со мной</div>
+          <div><b>3.</b> В чате нажми «Отправить» — заметка уйдёт в Obsidian</div>
+        </div>
     <div class="hint" id="noteHint">Откроется чат с Мией — она разложит заметку по папке и обновит индекс поиска.</div>
   </div>
   <div class="sec">Как это работает</div>
@@ -474,7 +483,34 @@ function sendNote(){
   }else{
     window.open(url,'_blank');
   }
-  document.getElementById('noteHint').textContent = 'Открыла чат с Мией — отправь сообщение, и заметка уйдёт в vault.';
+  document.getElementById('noteHint').innerHTML = 'Открыла чат со мной. Нажми там <b>«Отправить»</b> — и заметка окажется в папке <b>' + chosenFolder + '</b>.';
+}
+function buildPayload(){
+  var text = document.getElementById('noteText').value.trim();
+  if(!text) return null;
+  var tags = document.getElementById('noteTags').value.trim();
+  var payload = 'В vault → ' + chosenFolder;
+  if(tags) payload += ' #' + tags.split(',').map(function(s){return s.trim();}).filter(Boolean).join(' #');
+  payload += ': ' + text;
+  return payload;
+}
+function copyNote(){
+  var p = buildPayload();
+  if(!p){
+    document.getElementById('noteHint').innerHTML = '<span class="down">Сначала напиши текст заметки.</span>';
+    return;
+  }
+  function done(){ document.getElementById('noteHint').innerHTML = 'Текст скопирован. Вставь его в чат со мной и отправь.'; }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(p).then(done).catch(function(){ fallbackCopy(p, done); });
+  }else{ fallbackCopy(p, done); }
+}
+function fallbackCopy(text, done){
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){ document.getElementById('noteHint').textContent = 'Не получилось скопировать — выдели текст вручную.'; }
+  document.body.removeChild(ta);
 }
 
 var tg = window.Telegram && window.Telegram.WebApp;
@@ -490,6 +526,7 @@ for(var i = 0; i < tabs.length; i++){
 }
 buildFolders();
 document.getElementById('sendNote').onclick = sendNote;
+if(document.getElementById('copyNote')) document.getElementById('copyNote').onclick = copyNote;
 (function boot(){
   var s = loadSnap() || (typeof BAKED !== 'undefined' ? BAKED : null);
   if(s){
