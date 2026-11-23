@@ -2,114 +2,181 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0f1216">
 <title>BlockStock</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root{
-    --bg:#0f1216; --card:#171c22; --card2:#1e252d; --text:#e9eef5; --muted:#8d9aab;
-    --up:#34c77b; --down:#f0524d; --accent:#5b9cf8; --line:#26303a;
+    --bg:#0b0e12; --bg2:#0e1218; --card:#161c24; --card2:#1d252f; --line:#242e3a;
+    --text:#e8eef7; --muted:#8593a5; --up:#2ecc8f; --down:#f2555a; --accent:#4d8ef7;
+    --accent2:#8b5cf6; --radius:16px;
   }
   body.light{
-    --bg:#f4f6f9; --card:#ffffff; --card2:#eef2f7; --text:#131820; --muted:#6b7787;
-    --up:#0f9d58; --down:#d32f2f; --accent:#2f6fd0; --line:#dfe5ec;
+    --bg:#f2f5f9; --bg2:#e9eef5; --card:#ffffff; --card2:#eef3f9; --line:#dce4ee;
+    --text:#111823; --muted:#697787; --up:#0d9b63; --down:#d93a3f; --accent:#2f6fd0;
+    --accent2:#7c4ddb;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{
-    background:var(--bg); color:var(--text); font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    padding:14px 12px calc(20px + env(safe-area-inset-bottom));
+    background:var(--bg);color:var(--text);
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:16px 13px calc(84px + env(safe-area-inset-bottom));
+    max-width:640px;margin:0 auto;
   }
-  h1{font-size:19px;margin:0 0 2px;font-weight:650;letter-spacing:-.2px}
-  .sub{color:var(--muted);font-size:12.5px;margin-bottom:14px}
-  .card{background:var(--card);border-radius:14px;padding:13px 14px;margin-bottom:10px;border:1px solid var(--line)}
-  .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-  .tick{font-weight:700;font-size:16px;letter-spacing:.3px}
-  .qty{color:var(--muted);font-size:12px;font-weight:400;margin-left:6px}
-  .price{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
-  .pnl{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
-  .meta{color:var(--muted);font-size:12px;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
-  .bar{height:5px;background:var(--card2);border-radius:3px;margin-top:9px;overflow:hidden}
-  .bar>i{display:block;height:100%;border-radius:3px;transition:width .4s}
-  .total{background:linear-gradient(135deg,#1b2634,#141a21);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:10px}
-  body.light .total{background:linear-gradient(135deg,#e8effa,#eef4fb)}
-  .total .big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
-  .total .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-  .mini{background:rgba(255,255,255,.04);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--muted)}
-  body.light .mini{background:rgba(0,0,0,.04)}
-  .mini b{display:block;color:var(--text);font-size:14px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums}
-  .sec{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.7px;margin:18px 0 8px;padding-left:2px}
-  .lvl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
-  .lvl b{color:var(--text);font-weight:600}
-  .pill{display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:var(--card2);color:var(--muted);margin-top:6px}
-  .foot{color:var(--muted);font-size:11px;text-align:center;margin-top:16px;line-height:1.5}
+  .hdr{margin-bottom:14px}
+  .hdr .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-.3px}
+  h1 span{color:var(--accent)}
+  .idx{font-size:12.5px;font-weight:600;padding:4px 9px;border-radius:9px;background:var(--card);border:1px solid var(--line);white-space:nowrap}
+  .stamp{color:var(--muted);font-size:11.5px;margin-top:5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:11px;overflow:hidden}
+  .total{
+    background:linear-gradient(140deg,rgba(77,142,247,.14),rgba(139,92,246,.10) 55%,transparent);
+    border:1px solid var(--line);border-radius:20px;padding:17px 16px;margin-bottom:12px;position:relative;
+  }
+  .total .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px}
+  .total .big{font-size:29px;font-weight:750;letter-spacing:-.8px;margin-top:3px;font-variant-numeric:tabular-nums}
+  .total .pnl{font-size:14px;font-weight:650;margin-top:2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+  .mini{background:rgba(255,255,255,.045);border-radius:11px;padding:9px 11px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  body.light .mini{background:rgba(0,0,0,.045)}
+  .mini b{display:block;color:var(--text);font-size:15px;font-weight:700;margin-top:3px;text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .tick{font-weight:750;font-size:16.5px;letter-spacing:.4px}
+  .qty{color:var(--muted);font-size:11.5px;font-weight:500;margin-left:7px;letter-spacing:0}
+  .price{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+  .pnl{font-size:13.5px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .up{color:var(--up)}.down{color:var(--down)}.flat{color:var(--muted)}
+  .meta{color:var(--muted);font-size:11.5px;display:flex;gap:11px;flex-wrap:wrap;font-variant-numeric:tabular-nums;margin-top:3px}
+  .spark{display:block;width:100%;height:38px;margin-top:8px;opacity:.95}
+  .bar{height:5px;background:var(--card2);border-radius:4px;margin-top:10px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:4px;transition:width .5s ease}
+  .lvl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:5px;font-variant-numeric:tabular-nums;gap:8px}
+  .lvl b{color:var(--text);font-weight:600;text-align:right}
+  .sec{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.9px;margin:20px 2px 9px}
+  .tabbar{
+    position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;
+    background:var(--bg2);background:color-mix(in srgb,var(--bg2) 92%,transparent);backdrop-filter:blur(16px);
+    border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:50;
+  }
+  .tab{flex:1;text-align:center;padding:5px 0;border:0;background:none;color:var(--muted);font:inherit;font-size:10.5px;cursor:pointer;transition:color .2s}
+  .tab .ic{display:block;font-size:19px;line-height:1.25;margin-bottom:1px;filter:grayscale(1);opacity:.65;transition:all .2s}
+  .tab.on{color:var(--accent);font-weight:650}
+  .tab.on .ic{filter:none;opacity:1;transform:translateY(-1px)}
+  .page{display:none}.page.on{display:block;animation:fade .22s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  textarea,input[type=text]{
+    width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;
+    color:var(--text);font:inherit;padding:11px 12px;resize:vertical;outline:none;
+  }
+  textarea:focus,input[type=text]:focus{border-color:var(--accent)}
+  textarea{min-height:104px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+  .chip{
+    padding:7px 13px;border-radius:11px;border:1px solid var(--line);background:var(--card);
+    color:var(--muted);font-size:12.5px;cursor:pointer;transition:all .15s;font-family:inherit;
+  }
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:650}
+  .btn{
+    width:100%;padding:14px;border:0;border-radius:14px;font:inherit;font-size:15px;font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;margin-top:12px;
+    box-shadow:0 6px 20px rgba(77,142,247,.28);
+  }
+  .btn:active{transform:scale(.985)}
+  .btn[disabled]{opacity:.55;box-shadow:none}
+  .hint{color:var(--muted);font-size:12px;line-height:1.55;margin-top:10px}
   .err{color:var(--down);font-size:13px;padding:10px 0}
+  .foot{color:var(--muted);font-size:11px;text-align:center;line-height:1.6;margin-top:20px}
+  .note-item{padding:11px 0;border-bottom:1px solid var(--line)}
+  .note-item:last-child{border-bottom:0}
 </style>
 </head>
 <body>
-<h1>BlockStock <span id="idx" class="flat" style="font-size:13px;font-weight:500"></span></h1>
-<div class="sub" id="stamp">загрузка котировок…</div>
 
-<div class="total">
-  <div class="lbl">Портфель</div>
-  <div class="big" id="totalVal">—</div>
-  <div class="up down flat" id="totalPnl" style="font-size:14px;font-weight:650;margin-top:2px">—</div>
-  <div class="grid2">
-    <div class="mini">Вложено<b id="cost">—</b></div>
-    <div class="mini">Кэш<b id="cash">—</b></div>
+<div class="hdr">
+  <div class="top"><h1>Block<span>Stock</span></h1><div class="idx" id="idx">—</div></div>
+  <div class="stamp" id="stamp">загрузка котировок…</div>
+</div>
+
+<div class="page on" id="page-pos">
+  <div class="total">
+    <div class="lbl">Стоимость портфеля</div>
+    <div class="big" id="totalVal">—</div>
+    <div class="pnl" id="totalPnl">—</div>
+    <div class="grid2">
+      <div class="mini">Вложено<b id="cost">—</b></div>
+      <div class="mini">Кэш<b id="cash">—</b></div>
+    </div>
   </div>
+  <div class="sec">Позиции</div>
+  <div id="positions"><div class="err">загрузка…</div></div>
 </div>
 
-<div class="sec">Позиции</div>
-<div id="positions"></div>
-
-<div class="sec">Уровни</div>
-<div class="card" id="levels"><div class="err">—</div></div>
-
-<div class="foot">
-  Источник: MOEX ISS · задержка публичных данных ~15 мин<br>автообновление каждые 30 с<br>
-  Не инвестиционная рекомендация
+<div class="page" id="page-mkt">
+  <div class="sec" style="margin-top:0">Рынок</div>
+  <div id="market"><div class="err">загрузка…</div></div>
 </div>
 
+<div class="page" id="page-notes">
+  <div class="sec" style="margin-top:0">Новая заметка в Obsidian</div>
+  <div class="card">
+    <textarea id="noteText" placeholder="Что записать? Мысли, задача, идея, что угодно…"></textarea>
+    <div class="chips" id="folders"></div>
+    <input type="text" id="noteTags" placeholder="теги через запятую (необязательно)">
+    <button class="btn" id="sendNote">Отправить в vault</button>
+    <div class="hint" id="noteHint">Откроется чат с Мией — она разложит заметку по папке и обновит индекс поиска.</div>
+  </div>
+  <div class="sec">Как это работает</div>
+  <div class="card">
+    <div class="hint" style="margin-top:0">
+      Заметка уходит в твой Obsidian-vault на сервере: заголовок, дата, теги, папка. Через минуту она
+      уже синкается на телефон и попадает в смысловой поиск.<br><br>
+      Папки: Inbox — быстрые мысли, Дневник — запись за сегодня, Дача — бытовое, Идеи и Планы — на будущее,
+      Трейдинг — по рынку, Решения — что и почему решил.
+    </div>
+  </div>
+  <div class="foot">Просмотр и поиск по vault появятся, когда подключим сервер.</div>
+</div>
+
+<div class="tabbar">
+  <button class="tab on" data-tab="pos"><span class="ic">📊</span>Портфель</button>
+  <button class="tab" data-tab="mkt"><span class="ic">📈</span>Рынок</button>
+  <button class="tab" data-tab="notes"><span class="ic">📝</span>Заметки</button>
+</div>
 <script>
 var ISS = 'https://iss.moex.com/iss';
-var CFG = [
-  {t:'GAZP', qty:80,  avg:111.43, name:'Газпром'},
-  {t:'VTBR', qty:46,  avg:56.30,  name:'ВТБ'},
-  {t:'AFKS', qty:400, avg:7.886,  name:'АФК Система'}
+var BOT = 'FotikBotiksBot';
+var POS = [
+  {t:'GAZP', qty:80,  avg:111.43},
+  {t:'VTBR', qty:46,  avg:56.30},
+  {t:'AFKS', qty:400, avg:7.886}
 ];
-var CASH_DEFAULT = 460;
-var pos = loadPos();
-var cash = loadCash();
+var WATCH = ['GAZP','VTBR','AFKS','SBER','LKOH','ROSN'];
+var FOLDERS = ['Inbox','Дневник','Дача','Идеи','Планы','Трейдинг','Решения','Рефлексия'];
+var CASH = 460;
+var STORE_KEY = 'bs_v2_pos';
 
 function loadPos(){
   try{
-    var raw = localStorage.getItem('bs_pos');
+    var raw = localStorage.getItem(STORE_KEY);
     if(raw){ var p = JSON.parse(raw); if(Array.isArray(p) && p.length) return p; }
   }catch(e){}
-  return JSON.parse(JSON.stringify(CFG));
+  return JSON.parse(JSON.stringify(POS));
 }
-function loadCash(){
-  try{
-    var v = localStorage.getItem('bs_cash');
-    if(v !== null) return parseFloat(v);
-  }catch(e){}
-  return CASH_DEFAULT;
-}
-function saveAll(){
-  try{ localStorage.setItem('bs_pos', JSON.stringify(pos)); localStorage.setItem('bs_cash', String(cash)); }catch(e){}
-}
+POS = loadPos();
+try{ var c = localStorage.getItem('bs_cash'); if(c !== null) CASH = parseFloat(c); }catch(e){}
 
 function fmt(n, d){
   if(n === null || n === undefined || isNaN(n)) return '—';
   d = (d === undefined) ? 2 : d;
-  return n.toLocaleString('ru-RU', {minimumFractionDigits:d, maximumFractionDigits:d});
+  return Number(n).toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d});
 }
-function money(n){ return fmt(n, 2) + ' ₽'; }
-function signed(n){ return (n > 0 ? '+' : '') + fmt(n, 2); }
-function cls(n){ return n > 0 ? 'up' : (n < 0 ? 'down' : 'flat'); }
+function money(n){ return fmt(n,2) + ' ₽'; }
+function signed(n){ return (n>0?'+':'') + fmt(n,2); }
+function cls(n){ return n>0?'up':(n<0?'down':'flat'); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function getJSON(url, cb){
   var x = new XMLHttpRequest();
@@ -123,14 +190,11 @@ function getJSON(url, cb){
   x.ontimeout = function(){ cb(new Error('таймаут')); };
   x.send();
 }
-
 function parseBlock(json, name){
-  var b = json[name];
-  var idx = {};
+  var b = json[name], idx = {};
   for(var i = 0; i < b.columns.length; i++) idx[b.columns[i]] = i;
   return {idx: idx, rows: b.data};
 }
-
 function fetchQuotes(tickers, cb){
   var u = ISS + '/engines/stock/markets/shares/boards/TQBR/securities.json?iss.meta=off&iss.only=marketdata&securities=' + tickers.join(',');
   getJSON(u, function(err, json){
@@ -139,145 +203,210 @@ function fetchQuotes(tickers, cb){
     for(var r = 0; r < md.rows.length; r++){
       var row = md.rows[r], i = md.idx;
       out[row[i.SECID]] = {
-        last: row[i.LAST],
-        prevChg: row[i.LASTTOPREVPRICE],
-        high: row[i.HIGH],
-        low: row[i.LOW],
-        time: row[i.UPDATETIME]
+        last: row[i.LAST], prevChg: row[i.LASTTOPREVPRICE],
+        high: row[i.HIGH], low: row[i.LOW], time: row[i.UPDATETIME]
       };
     }
     cb(null, out);
   });
 }
-
 function fetchCandles(ticker, cb){
-  var d = new Date(Date.now() - 70 * 86400000);
-  var from = d.toISOString().slice(0, 10);
+  var from = new Date(Date.now() - 70*86400000).toISOString().slice(0,10);
   var u = ISS + '/engines/stock/markets/shares/boards/TQBR/securities/' + ticker + '/candles.json?from=' + from + '&interval=24&iss.meta=off';
   getJSON(u, function(err, json){
     if(err){ cb(err); return; }
-    var c = parseBlock(json, 'candles'), closes = [], trs = [];
+    var c = parseBlock(json,'candles'), closes = [], trs = [];
     for(var r = 0; r < c.rows.length; r++){
       var row = c.rows[r], i = c.idx;
       closes.push(row[i.close]);
       if(r > 0){
         var h = row[i.high], l = row[i.low], pc = c.rows[r-1][c.idx.close];
-        trs.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
+        trs.push(Math.max(h-l, Math.abs(h-pc), Math.abs(l-pc)));
       }
     }
     function sma(n){
       if(closes.length < n) return null;
       var s = 0;
-      for(var k = closes.length - n; k < closes.length; k++) s += closes[k];
-      return s / n;
+      for(var k = closes.length-n; k < closes.length; k++) s += closes[k];
+      return s/n;
     }
     var atr = null;
     if(trs.length >= 14){
       var s2 = 0;
-      for(var k = trs.length - 14; k < trs.length; k++) s2 += trs[k];
-      atr = s2 / 14;
+      for(var k = trs.length-14; k < trs.length; k++) s2 += trs[k];
+      atr = s2/14;
     }
-    var lo = null, hi = null;
-    if(closes.length){
-      var w = closes.slice(-20);
-      lo = Math.min.apply(null, w); hi = Math.max.apply(null, w);
-    }
-    cb(null, {sma5: sma(5), sma10: sma(10), sma20: sma(20), atr: atr, lo20: lo, hi20: hi, last: closes[closes.length-1]});
+    var w = closes.slice(-20);
+    cb(null, {
+      closes: closes.slice(-30), sma5: sma(5), sma10: sma(10), sma20: sma(20),
+      atr: atr, lo20: w.length?Math.min.apply(null,w):null, hi20: w.length?Math.max.apply(null,w):null,
+      last: closes[closes.length-1]
+    });
   });
 }
+function spark(closes){
+  if(!closes || closes.length < 2) return '';
+  var mn = Math.min.apply(null, closes), mx = Math.max.apply(null, closes);
+  var rng = (mx - mn) || 1, W = 300, H = 38, pts = [];
+  for(var i = 0; i < closes.length; i++){
+    var x = (i/(closes.length-1))*W;
+    var y = H - 2 - ((closes[i]-mn)/rng)*(H-6);
+    pts.push((i?'L':'M') + x.toFixed(1) + ' ' + y.toFixed(1));
+  }
+  var up = closes[closes.length-1] >= closes[0];
+  var col = up ? 'var(--up)' : 'var(--down)';
+  var gid = 'g' + Math.random().toString(36).slice(2,7);
+  return '<svg class="spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">'
+    + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0%" stop-color="' + col + '" stop-opacity="0.28"/>'
+    + '<stop offset="100%" stop-color="' + col + '" stop-opacity="0"/>'
+    + '</linearGradient></defs>'
+    + '<path d="' + pts.join(' ') + ' L' + W + ' ' + H + ' L0 ' + H + ' Z" fill="url(#' + gid + ')"/>'
+    + '<path d="' + pts.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>'
+    + '</svg>';
+}
 
-function render(quotes, tech){
+function renderPos(quotes, tech){
   var totVal = 0, totCost = 0, html = '';
-  for(var i = 0; i < pos.length; i++){
-    var p = pos[i];
-    var q = quotes[p.t] || {};
+  for(var i = 0; i < POS.length; i++){
+    var p = POS[i], q = quotes[p.t] || {};
     var price = (q.last === null || q.last === undefined) ? null : q.last;
-    var val = price === null ? p.qty * p.avg : p.qty * price;
-    var cost = p.qty * p.avg;
+    var val = price === null ? p.qty*p.avg : p.qty*price;
+    var cost = p.qty*p.avg;
     totVal += val; totCost += cost;
-    var pnl = val - cost;
-    var pnlPc = cost ? (pnl / cost * 100) : 0;
-    var be = p.avg * 1.006;
-    var need = price ? ((be / price - 1) * 100) : null;
-    var w = Math.max(0, Math.min(100, 50 + pnlPc * 5));
-    var col = pnl > 0 ? 'var(--up)' : (pnl < 0 ? 'var(--down)' : 'var(--muted)');
+    var pnl = val - cost, pc = cost ? pnl/cost*100 : 0;
+    var be = p.avg*1.006;
+    var need = price ? (be/price-1)*100 : null;
+    var w = Math.max(0, Math.min(100, 50 + pc*5));
+    var col = pnl>0?'var(--up)':(pnl<0?'var(--down)':'var(--muted)');
+    var tg = tech[p.t];
     html += '<div class="card">'
-      + '<div class="row"><div><span class="tick">' + p.t + '</span><span class="qty">' + p.qty + ' шт · ' + fmt(p.avg, 3) + '</span></div>'
-      + '<div class="price">' + (price === null ? '—' : fmt(price, 3)) + '</div></div>'
-      + '<div class="row" style="margin-top:4px"><div class="meta" style="margin-top:0">'
-      + '<span class="' + cls(q.prevChg) + '">' + (q.prevChg === undefined || q.prevChg === null ? '—' : signed(q.prevChg) + '%') + ' за день</span>'
-      + '<span>стоимость ' + money(val) + '</span></div>'
-      + '<div class="pnl ' + cls(pnl) + '">' + signed(pnl) + ' ₽ · ' + signed(pnlPc) + '%</div></div>'
+      + '<div class="row"><div><span class="tick">' + p.t + '</span><span class="qty">' + p.qty + ' шт · вход ' + fmt(p.avg,3) + '</span></div>'
+      + '<div class="price">' + (price===null?'—':fmt(price,3)) + '</div></div>'
+      + '<div class="row" style="margin-top:3px"><div class="meta">'
+      + '<span class="' + cls(q.prevChg) + '">' + (q.prevChg===undefined||q.prevChg===null?'—':signed(q.prevChg)+'%') + ' за день</span>'
+      + '<span>' + money(val) + '</span></div>'
+      + '<div class="pnl ' + cls(pnl) + '">' + signed(pnl) + ' ₽ · ' + signed(pc) + '%</div></div>'
+      + (tg ? spark(tg.closes) : '')
       + '<div class="bar"><i style="width:' + w + '%;background:' + col + '"></i></div>'
-      + '<div class="lvl"><span>безубыток с комиссией</span><b>' + fmt(be, 3) + (need === null ? '' : ' · нужно ' + signed(need) + '%') + '</b></div>'
+      + '<div class="lvl"><span>безубыток с комиссией</span><b>' + fmt(be,3) + (need===null?'':' · ' + signed(need) + '%') + '</b></div>'
       + '</div>';
   }
   document.getElementById('positions').innerHTML = html || '<div class="card err">Позиций нет</div>';
-
-  var totPnl = totVal - totCost;
-  var totPc = totCost ? totPnl / totCost * 100 : 0;
-  document.getElementById('totalVal').textContent = money(totVal + cash);
+  var totPnl = totVal - totCost, totPc = totCost ? totPnl/totCost*100 : 0;
+  document.getElementById('totalVal').textContent = money(totVal + CASH);
   var te = document.getElementById('totalPnl');
-  te.textContent = signed(totPnl) + ' ₽ · ' + signed(totPc) + '% от вложенного';
-  te.className = cls(totPnl);
+  te.textContent = signed(totPnl) + ' ₽ · ' + signed(totPc) + '% к вложенному';
+  te.className = 'pnl ' + cls(totPnl);
   document.getElementById('cost').textContent = money(totCost);
-  document.getElementById('cash').textContent = money(cash);
-
-  var lv = '';
-  for(var t in tech){
-    var x = tech[t];
-    if(!x) continue;
-    lv += '<div style="margin-bottom:10px"><div class="tick" style="font-size:13.5px">' + t + '</div>'
-      + '<div class="lvl"><span>SMA5 / SMA10 / SMA20</span><b>' + fmt(x.sma5) + ' / ' + fmt(x.sma10) + ' / ' + fmt(x.sma20) + '</b></div>'
-      + '<div class="lvl"><span>ATR14</span><b>' + fmt(x.atr, 3) + (x.last ? ' · ' + fmt(x.atr / x.last * 100, 1) + '% от цены' : '') + '</b></div>'
-      + '<div class="lvl"><span>диапазон 20 дней</span><b>' + fmt(x.lo20, 3) + ' — ' + fmt(x.hi20, 3) + '</b></div>'
-      + '</div>';
-  }
-  document.getElementById('levels').innerHTML = lv || '<div class="err">нет данных</div>';
+  document.getElementById('cash').textContent = money(CASH);
 }
 
-function fetchIndex(cb){
-  var u = ISS + '/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json?iss.meta=off&iss.only=marketdata';
-  getJSON(u, function(err, json){
-    if(err){ cb(null); return; }
-    var md = parseBlock(json, 'marketdata');
-    if(!md.rows.length){ cb(null); return; }
-    var i = md.idx, row = md.rows[0];
-    cb({last: row[i.CURRENTVALUE], chg: row[i.LASTCHANGEPRCNT]});
-  });
+function renderMarket(quotes, tech){
+  var html = '';
+  for(var i = 0; i < WATCH.length; i++){
+    var t = WATCH[i], q = quotes[t] || {}, tg = tech[t];
+    var pnlCls = cls(q.prevChg);
+    html += '<div class="card" style="padding:12px 13px">'
+      + '<div class="row"><div class="tick">' + t + '</div>'
+      + '<div><span class="price">' + (q.last===null||q.last===undefined?'—':fmt(q.last,3)) + '</span> '
+      + '<span class="' + pnlCls + '" style="font-size:13px;font-weight:650">' + (q.prevChg===undefined||q.prevChg===null?'':'(' + signed(q.prevChg) + '%)') + '</span></div></div>'
+      + (tg ? spark(tg.closes) : '')
+      + (tg ? '<div class="lvl"><span>SMA5 / 10 / 20</span><b>' + fmt(tg.sma5) + ' / ' + fmt(tg.sma10) + ' / ' + fmt(tg.sma20) + '</b></div>'
+           + '<div class="lvl"><span>ATR14 · 20 дней</span><b>' + fmt(tg.atr,3) + ' · ' + fmt(tg.lo20,3) + '–' + fmt(tg.hi20,3) + '</b></div>' : '')
+      + '</div>';
+  }
+  document.getElementById('market').innerHTML = html || '<div class="err">нет данных</div>';
 }
 
 function refresh(){
-  var tickers = [];
-  for(var i = 0; i < pos.length; i++) tickers.push(pos[i].t);
-  fetchQuotes(tickers, function(err, quotes){
+  var all = [];
+  for(var i = 0; i < POS.length; i++) if(all.indexOf(POS[i].t) < 0) all.push(POS[i].t);
+  for(var k = 0; k < WATCH.length; k++) if(all.indexOf(WATCH[k]) < 0) all.push(WATCH[k]);
+
+  fetchQuotes(all, function(err, quotes){
     if(err){
-      document.getElementById('stamp').innerHTML = '<span class="down">нет связи с MOEX: ' + err.message + '</span>';
+      document.getElementById('stamp').innerHTML = '<span class="down">нет связи с MOEX: ' + esc(err.message) + '</span>';
       return;
     }
-    var tech = {}, left = tickers.length;
-    for(var k = 0; k < tickers.length; k++){
+    var tech = {}, left = all.length;
+    for(var j = 0; j < all.length; j++){
       (function(t){
         fetchCandles(t, function(e2, data){
           if(!e2) tech[t] = data;
-          if(--left === 0) finish(quotes, tech);
+          if(--left === 0) done(quotes, tech);
         });
-      })(tickers[k]);
+      })(all[j]);
     }
-    function finish(q, tc){
-      render(q, tc);
-      fetchIndex(function(ix){
-        var el = document.getElementById('idx');
-        if(ix && ix.last){
-          el.textContent = 'IMOEX ' + fmt(ix.last, 2) + ' (' + signed(ix.chg) + '%)';
-          el.className = cls(ix.chg);
-        }
-        var t = '';
-        for(var key in q){ t = q[key].time; break; }
-        document.getElementById('stamp').textContent = 'MOEX ' + (t || '') + ' · задержка ~15 мин · обновлено ' + new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
-      });
+    function done(q, tc){
+      renderPos(q, tc);
+      renderMarket(q, tc);
+      var stamp = '';
+      for(var key in q){ stamp = q[key].time; break; }
+      document.getElementById('stamp').textContent = 'MOEX ' + (stamp||'') + ' · задержка ~15 мин · обновлено '
+        + new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+      fetchIndex();
     }
   });
+}
+function fetchIndex(){
+  var u = ISS + '/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json?iss.meta=off&iss.only=marketdata';
+  getJSON(u, function(err, json){
+    if(err) return;
+    var md = parseBlock(json,'marketdata');
+    if(!md.rows.length) return;
+    var i = md.idx, row = md.rows[0];
+    var el = document.getElementById('idx');
+    el.textContent = 'IMOEX ' + fmt(row[i.CURRENTVALUE],2) + ' · ' + signed(row[i.LASTCHANGEPRCNT]) + '%';
+    el.className = 'idx ' + cls(row[i.LASTCHANGEPRCNT]);
+  });
+}
+
+function switchTab(name){
+  var pages = document.querySelectorAll('.page');
+  for(var i = 0; i < pages.length; i++) pages[i].classList.toggle('on', pages[i].id === 'page-' + name);
+  var tabs = document.querySelectorAll('.tab');
+  for(var j = 0; j < tabs.length; j++) tabs[j].classList.toggle('on', tabs[j].getAttribute('data-tab') === name);
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback){
+    try{ Telegram.WebApp.HapticFeedback.selectionChanged(); }catch(e){}
+  }
+}
+
+var chosenFolder = 'Inbox';
+function buildFolders(){
+  var html = '';
+  for(var i = 0; i < FOLDERS.length; i++){
+    html += '<button class="chip' + (i===0?' on':'') + '" data-f="' + FOLDERS[i] + '">' + FOLDERS[i] + '</button>';
+  }
+  var box = document.getElementById('folders');
+  box.innerHTML = html;
+  var chips = box.querySelectorAll('.chip');
+  for(var k = 0; k < chips.length; k++){
+    chips[k].onclick = function(){
+      for(var m = 0; m < chips.length; m++) chips[m].classList.remove('on');
+      this.classList.add('on');
+      chosenFolder = this.getAttribute('data-f');
+    };
+  }
+}
+function sendNote(){
+  var text = document.getElementById('noteText').value.trim();
+  var tags = document.getElementById('noteTags').value.trim();
+  if(!text){
+    document.getElementById('noteHint').innerHTML = '<span class="down">Сначала напиши текст заметки.</span>';
+    return;
+  }
+  var payload = 'В vault → ' + chosenFolder;
+  if(tags) payload += ' #' + tags.split(',').map(function(s){return s.trim();}).filter(Boolean).join(' #');
+  payload += ': ' + text;
+  var url = 'https://t.me/' + BOT + '?text=' + encodeURIComponent(payload);
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink){
+    try{ Telegram.WebApp.openTelegramLink(url); }
+    catch(e){ window.open(url,'_blank'); }
+  }else{
+    window.open(url,'_blank');
+  }
+  document.getElementById('noteHint').textContent = 'Открыла чат с Мией — отправь сообщение, и заметка уйдёт в vault.';
 }
 
 var tg = window.Telegram && window.Telegram.WebApp;
@@ -285,9 +414,14 @@ if(tg){
   try{
     tg.ready(); tg.expand();
     if(tg.colorScheme === 'light') document.body.classList.add('light');
-    if(tg.setHeaderColor) tg.setHeaderColor('secondary_bg_color');
   }catch(e){}
 }
+var tabs = document.querySelectorAll('.tab');
+for(var i = 0; i < tabs.length; i++){
+  tabs[i].onclick = function(){ switchTab(this.getAttribute('data-tab')); };
+}
+buildFolders();
+document.getElementById('sendNote').onclick = sendNote;
 refresh();
 setInterval(refresh, 30000);
 </script>
