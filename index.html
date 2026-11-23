@@ -89,6 +89,11 @@
   .hint{color:var(--muted);font-size:12px;line-height:1.55;margin-top:10px}
   .err{color:var(--down);font-size:13px;padding:10px 0}
   .foot{color:var(--muted);font-size:11px;text-align:center;line-height:1.6;margin-top:20px}
+  .banner{display:none;border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.4;margin-bottom:11px;border:1px solid var(--line);background:var(--card2);color:var(--muted)}
+  .banner.warn{border-color:rgba(242,85,90,.35);color:var(--down)}
+  .banner.info{border-color:rgba(77,142,247,.3);color:var(--accent)}
+  .banner b{color:var(--text);font-weight:650}
+  .closed{color:var(--muted);font-size:11.5px;margin-top:2px}
   .note-item{padding:11px 0;border-bottom:1px solid var(--line)}
   .note-item:last-child{border-bottom:0}
 </style>
@@ -98,6 +103,7 @@
 <div class="hdr">
   <div class="top"><h1>Block<span>Stock</span></h1><div class="idx" id="idx">—</div></div>
   <div class="stamp" id="stamp">загрузка котировок…</div>
+  <div class="banner" id="banner"></div>
 </div>
 
 <div class="page on" id="page-pos">
@@ -167,6 +173,40 @@ function loadPos(){
 }
 POS = loadPos();
 try{ var c = localStorage.getItem('bs_cash'); if(c !== null) CASH = parseFloat(c); }catch(e){}
+
+var SNAP_KEY = 'bs_snap_v1';
+var lastIdx = null;
+function saveSnap(q, t, ix){
+  try{ localStorage.setItem(SNAP_KEY, JSON.stringify({ts: Date.now(), q: q, tech: t, idx: ix || lastIdx})); }catch(e){}
+}
+function loadSnap(){
+  try{
+    var raw = localStorage.getItem(SNAP_KEY);
+    if(!raw) return null;
+    var s = JSON.parse(raw);
+    if(!s || !s.ts || !s.q) return null;
+    return s;
+  }catch(e){ return null; }
+}
+function agoText(ts){
+  var d = Math.round((Date.now() - ts) / 60000);
+  if(d < 1) return 'только что';
+  if(d < 60) return d + ' мин назад';
+  var hh = Math.round(d / 60);
+  if(hh < 24) return hh + ' ч назад';
+  return Math.round(hh / 24) + ' дн назад';
+}
+function setBanner(text, kind){
+  var b = document.getElementById('banner');
+  if(!text){ b.style.display = 'none'; b.className = 'banner'; b.innerHTML = ''; return; }
+  b.style.display = 'block';
+  b.className = 'banner ' + (kind || '');
+  b.innerHTML = text;
+}
+function allQuotesEmpty(q){
+  for(var k in q){ if(q[k] && q[k].last !== null && q[k].last !== undefined) return false; }
+  return true;
+}
 
 function fmt(n, d){
   if(n === null || n === undefined || isNaN(n)) return '—';
@@ -269,8 +309,9 @@ function spark(closes){
 function renderPos(quotes, tech){
   var totVal = 0, totCost = 0, html = '';
   for(var i = 0; i < POS.length; i++){
-    var p = POS[i], q = quotes[p.t] || {};
-    var price = (q.last === null || q.last === undefined) ? null : q.last;
+    var p = POS[i], q = quotes[p.t] || {}, tg = tech[p.t];
+    var raw = (q.last === null || q.last === undefined) ? null : q.last;
+    var price = raw !== null ? raw : (tg && tg.last ? tg.last : null);
     var val = price === null ? p.qty*p.avg : p.qty*price;
     var cost = p.qty*p.avg;
     totVal += val; totCost += cost;
@@ -282,7 +323,7 @@ function renderPos(quotes, tech){
     var tg = tech[p.t];
     html += '<div class="card">'
       + '<div class="row"><div><span class="tick">' + p.t + '</span><span class="qty">' + p.qty + ' шт · вход ' + fmt(p.avg,3) + '</span></div>'
-      + '<div class="price">' + (price===null?'—':fmt(price,3)) + '</div></div>'
+      + '<div class="price">' + (price===null?'<span style="font-size:13px;color:var(--muted)">нет цены</span>':fmt(price,3)) + '</div></div>'
       + '<div class="row" style="margin-top:3px"><div class="meta">'
       + '<span class="' + cls(q.prevChg) + '">' + (q.prevChg===undefined||q.prevChg===null?'—':signed(q.prevChg)+'%') + ' за день</span>'
       + '<span>' + money(val) + '</span></div>'
@@ -306,10 +347,11 @@ function renderMarket(quotes, tech){
   var html = '';
   for(var i = 0; i < WATCH.length; i++){
     var t = WATCH[i], q = quotes[t] || {}, tg = tech[t];
+    var px = (q.last === null || q.last === undefined) ? (tg && tg.last ? tg.last : null) : q.last;
     var pnlCls = cls(q.prevChg);
     html += '<div class="card" style="padding:12px 13px">'
       + '<div class="row"><div class="tick">' + t + '</div>'
-      + '<div><span class="price">' + (q.last===null||q.last===undefined?'—':fmt(q.last,3)) + '</span> '
+      + '<div><span class="price">' + (px===null?'—':fmt(px,3)) + '</span> '
       + '<span class="' + pnlCls + '" style="font-size:13px;font-weight:650">' + (q.prevChg===undefined||q.prevChg===null?'':'(' + signed(q.prevChg) + '%)') + '</span></div></div>'
       + (tg ? spark(tg.closes) : '')
       + (tg ? '<div class="lvl"><span>SMA5 / 10 / 20</span><b>' + fmt(tg.sma5) + ' / ' + fmt(tg.sma10) + ' / ' + fmt(tg.sma20) + '</b></div>'
@@ -326,7 +368,16 @@ function refresh(){
 
   fetchQuotes(all, function(err, quotes){
     if(err){
-      document.getElementById('stamp').innerHTML = '<span class="down">нет связи с MOEX: ' + esc(err.message) + '</span>';
+      var s = loadSnap();
+      if(s){
+        renderPos(s.q, s.tech);
+        renderMarket(s.q, s.tech);
+        setBanner('Нет связи с MOEX · показаны данные от <b>' + agoText(s.ts) + '</b>. Пробую снова каждые 30 с.', 'warn');
+        document.getElementById('stamp').textContent = 'офлайн · последнее обновление ' + agoText(s.ts);
+      }else{
+        setBanner('Нет связи с MOEX: ' + esc(err.message) + '. Как только биржа ответит — всё появится само.', 'warn');
+        document.getElementById('stamp').textContent = 'нет данных';
+      }
       return;
     }
     var tech = {}, left = all.length;
@@ -343,8 +394,16 @@ function refresh(){
       renderMarket(q, tc);
       var stamp = '';
       for(var key in q){ stamp = q[key].time; break; }
-      document.getElementById('stamp').textContent = 'MOEX ' + (stamp||'') + ' · задержка ~15 мин · обновлено '
-        + new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+      var closed = allQuotesEmpty(q);
+      if(closed){
+        setBanner('Биржа закрыта · котировки не обновляются. Ниже — последние доступные цены и графики за 30 дней.', 'info');
+        document.getElementById('stamp').textContent = 'рынок закрыт' + (stamp ? ' · последняя сделка ' + stamp : '');
+      }else{
+        setBanner('');
+        document.getElementById('stamp').textContent = 'MOEX ' + (stamp||'') + ' · задержка ~15 мин · обновлено '
+          + new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+      }
+      saveSnap(q, tc);
       fetchIndex();
     }
   });
@@ -352,16 +411,21 @@ function refresh(){
 function fetchIndex(){
   var u = ISS + '/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json?iss.meta=off&iss.only=marketdata';
   getJSON(u, function(err, json){
-    if(err) return;
+    if(err){ if(lastIdx) paintIdx(lastIdx); return; }
     var md = parseBlock(json,'marketdata');
-    if(!md.rows.length) return;
+    if(!md.rows.length){ if(lastIdx) paintIdx(lastIdx); return; }
     var i = md.idx, row = md.rows[0];
-    var el = document.getElementById('idx');
-    el.textContent = 'IMOEX ' + fmt(row[i.CURRENTVALUE],2) + ' · ' + signed(row[i.LASTCHANGEPRCNT]) + '%';
-    el.className = 'idx ' + cls(row[i.LASTCHANGEPRCNT]);
+    lastIdx = {value: row[i.CURRENTVALUE], chg: row[i.LASTCHANGEPRCNT]};
+    paintIdx(lastIdx);
   });
 }
-
+function paintIdx(ix){
+  if(!ix || ix.value === null || ix.value === undefined) return;
+  var el = document.getElementById('idx');
+  var chg = ix.chg;
+  el.textContent = 'IMOEX ' + fmt(ix.value,2) + (chg === null || chg === undefined ? '' : ' · ' + signed(chg) + '%');
+  el.className = 'idx ' + cls(chg || 0);
+}
 function switchTab(name){
   var pages = document.querySelectorAll('.page');
   for(var i = 0; i < pages.length; i++) pages[i].classList.toggle('on', pages[i].id === 'page-' + name);
@@ -422,8 +486,23 @@ for(var i = 0; i < tabs.length; i++){
 }
 buildFolders();
 document.getElementById('sendNote').onclick = sendNote;
-refresh();
+(function boot(){
+  var s = loadSnap();
+  if(s){
+    try{
+      renderPos(s.q, s.tech);
+      renderMarket(s.q, s.tech);
+      if(s.idx){ lastIdx = s.idx; paintIdx(lastIdx); }
+      setBanner('Показаны сохранённые данные · <b>' + agoText(s.ts) + '</b>. Обновляю…', 'info');
+      document.getElementById('stamp').textContent = 'кэш от ' + agoText(s.ts);
+    }catch(e){}
+  }
+  refresh();
+})();
 setInterval(refresh, 30000);
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden) refresh();
+});
 </script>
 </body>
 </html>
