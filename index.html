@@ -200,6 +200,35 @@ function loadSnap(){
     return s;
   }catch(e){ return null; }
 }
+var SERVER_SNAP = './snapshot.json';
+function loadServerSnap(cb){
+  var x = new XMLHttpRequest();
+  var done = false;
+  function fin(v){ if(done) return; done = true; cb(v); }
+  try{
+    x.open('GET', SERVER_SNAP + '?t=' + Date.now(), true);
+    x.timeout = 12000;
+    x.onload = function(){
+      if(x.status !== 200){ fin(null); return; }
+      try{
+        var s = JSON.parse(x.responseText);
+        if(!s || !s.ts || !s.q) { fin(null); return; }
+        fin(s);
+      }catch(e){ fin(null); }
+    };
+    x.onerror = function(){ fin(null); };
+    x.ontimeout = function(){ fin(null); };
+    x.send();
+  }catch(e){ fin(null); }
+}
+function bestSnap(server){
+  var local = loadSnap();
+  var baked = (typeof BAKED !== 'undefined') ? BAKED : null;
+  var cands = [server, local, baked].filter(Boolean);
+  if(!cands.length) return null;
+  cands.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+  return cands[0];
+}
 function agoText(ts){
   var d = Math.round((Date.now() - ts) / 60000);
   if(d < 1) return 'только что';
@@ -381,16 +410,26 @@ function refresh(){
 
   fetchQuotes(all, function(err, quotes){
     if(err){
-      var s = loadSnap() || (typeof BAKED !== 'undefined' ? BAKED : null);
-      if(s){
-        renderPos(s.q, s.tech);
-        renderMarket(s.q, s.tech);
-        setBanner('Нет связи с MOEX · показаны сохранённые данные (<b>' + agoText(s.ts) + '</b>). Пробую снова каждые 30 с.', 'warn');
-        document.getElementById('stamp').textContent = 'офлайн · данные от ' + agoText(s.ts);
-      }else{
-        setBanner('Нет связи с MOEX: ' + esc(err.message) + '. Возможные причины: биржа недоступна, нет интернета, или устройство не доверяет сертификату MOEX (Russian Trusted CA). Повторяю каждые 30 с.', 'warn');
-        document.getElementById('stamp').textContent = 'нет данных';
-      }
+      loadServerSnap(function(server){
+        var s = bestSnap(server);
+        if(s){
+          renderPos(s.q, s.tech);
+          renderMarket(s.q, s.tech);
+          if(s.idx) { lastIdx = s.idx; paintIdx(s.idx); }
+          var fromServer = server && s.ts === server.ts;
+          var mins = Math.round((Date.now() - s.ts) / 60000);
+          if(fromServer && mins <= 45){
+            setBanner('Данные с сервера · обновлено <b>' + agoText(s.ts) + '</b>. Прямой доступ к MOEX с телефона закрыт сертификатом — обновляю через сервер каждые 15 мин.', 'info');
+          }else{
+            setBanner('Нет связи с MOEX · показаны сохранённые данные (<b>' + agoText(s.ts) + '</b>). Пробую снова каждые 30 с.', 'warn');
+          }
+          var srcName = (server && s.ts === server.ts) ? 'сервер' : ((loadSnap() && loadSnap().ts === s.ts) ? 'кэш' : 'вшитый снимок');
+          document.getElementById('stamp').textContent = srcName + ' · данные от ' + agoText(s.ts);
+        }else{
+          setBanner('Нет связи ни с MOEX, ни с сервером приложения. Проверь интернет — повторяю каждые 30 с.', 'warn');
+          document.getElementById('stamp').textContent = 'нет данных';
+        }
+      });
       return;
     }
     var tech = {}, left = all.length;
@@ -538,6 +577,18 @@ if(document.getElementById('copyNote')) document.getElementById('copyNote').oncl
       document.getElementById('stamp').textContent = 'кэш от ' + agoText(s.ts);
     }catch(e){}
   }
+  loadServerSnap(function(server){
+    if(!server) return;
+    var cur = bestSnap(null);
+    if(cur && (cur.ts||0) >= (server.ts||0)) return;
+    try{
+      renderPos(server.q, server.tech);
+      renderMarket(server.q, server.tech);
+      if(server.idx){ lastIdx = server.idx; paintIdx(server.idx); }
+      setBanner('Данные с сервера · обновлено <b>' + agoText(server.ts) + '</b>. Подтягиваю свежие…', 'info');
+      document.getElementById('stamp').textContent = 'сервер · данные от ' + agoText(server.ts);
+    }catch(e){}
+  });
   refresh();
 })();
 setInterval(refresh, 30000);
