@@ -61,6 +61,16 @@
     background:var(--bg2);background:color-mix(in srgb,var(--bg2) 92%,transparent);backdrop-filter:blur(16px);
     border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:50;
   }
+  .feedstamp{text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);opacity:.8}
+  .news{padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .news:last-child{border-bottom:0}
+  .news:active{opacity:.6}
+  .news-top{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);margin-bottom:4px}
+  .news-top .t{font-variant-numeric:tabular-nums}
+  .news-top .s{opacity:.85}
+  .news-top .hot{color:var(--accent);font-weight:650}
+  .news-t{font-size:13.5px;line-height:1.42;color:var(--text)}
+  .news-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:7px;background:var(--card2);color:var(--accent);font-size:10px;font-weight:650;vertical-align:middle}
   .tab{flex:1;text-align:center;padding:5px 0;border:0;background:none;color:var(--muted);font:inherit;font-size:10.5px;cursor:pointer;transition:color .2s}
   .tab .ic{display:block;font-size:19px;line-height:1.25;margin-bottom:1px;filter:grayscale(1);opacity:.65;transition:all .2s}
   .tab.on{color:var(--accent);font-weight:650}
@@ -155,9 +165,16 @@
   <div class="foot">Просмотр и поиск по vault появятся, когда подключим сервер.</div>
 </div>
 
+<div class="page" id="page-feed">
+  <div class="sec" style="margin-top:0">Живая лента <span class="feedstamp" id="feedStamp"></span></div>
+  <div id="feed"><div class="err">загрузка…</div></div>
+  <div class="foot">Мосбиржа · Интерфакс · РБК · Финам · Коммерсантъ · Ведомости. Обновляю каждые 10 минут; свежее — сверху.</div>
+</div>
+
 <div class="tabbar">
   <button class="tab on" data-tab="pos"><span class="ic">📊</span>Портфель</button>
   <button class="tab" data-tab="mkt"><span class="ic">📈</span>Рынок</button>
+  <button class="tab" data-tab="feed"><span class="ic">📰</span>Лента</button>
   <button class="tab" data-tab="notes"><span class="ic">📝</span>Заметки</button>
 </div>
 <script>
@@ -479,6 +496,73 @@ function paintIdx(ix){
   el.textContent = 'IMOEX ' + fmt(ix.value,2) + (chg === null || chg === undefined ? '' : ' · ' + signed(chg) + '%');
   el.className = 'idx ' + cls(chg || 0);
 }
+var FEED_KEY = 'bs_feed_v1';
+function newsTime(ts){
+  var d = new Date(ts);
+  var now = new Date();
+  var hm = d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  if(d.toDateString() === now.toDateString()) return hm;
+  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) + ' ' + hm;
+}
+function renderFeed(data){
+  var box = document.getElementById('feed');
+  if(!data || !data.items || !data.items.length){
+    box.innerHTML = '<div class="err">Лента пока пуста — новости появятся в течение дня.</div>';
+    return;
+  }
+  var html = '<div class="card">';
+  for(var i = 0; i < data.items.length; i++){
+    var it = data.items[i];
+    var tags = '';
+    for(var j = 0; j < (it.tags || []).length; j++) tags += '<span class="news-tag">' + esc(it.tags[j]) + '</span>';
+    var fresh = (Date.now() - it.ts) < 3600000;
+    html += '<div class="news" data-url="' + esc(it.u || '') + '">'
+      + '<div class="news-top"><span class="t' + (fresh ? ' hot' : '') + '">' + newsTime(it.ts) + '</span>'
+      + '<span class="s">' + esc(it.s || '') + '</span></div>'
+      + '<div class="news-t">' + esc(it.t) + tags + '</div></div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
+  var nodes = box.querySelectorAll('.news');
+  for(var k = 0; k < nodes.length; k++){
+    nodes[k].onclick = function(){
+      var u = this.getAttribute('data-url');
+      if(!u) return;
+      if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) Telegram.WebApp.openLink(u);
+      else window.open(u, '_blank');
+    };
+  }
+  var st = document.getElementById('feedStamp');
+  if(st) st.textContent = '· обновлено ' + newsTime(data.ts);
+}
+function loadFeed(cb){
+  var x = new XMLHttpRequest();
+  var done = false;
+  function fin(d){ if(done) return; done = true; if(cb) cb(d); }
+  try{
+    x.open('GET', './news.json?t=' + Date.now(), true);
+    x.timeout = 15000;
+    x.onload = function(){
+      if(x.status !== 200){ fin(null); return; }
+      try{
+        var d = JSON.parse(x.responseText);
+        try{ localStorage.setItem(FEED_KEY, JSON.stringify(d)); }catch(e){}
+        renderFeed(d);
+        fin(d);
+      }catch(e){ fin(null); }
+    };
+    x.onerror = function(){ fin(null); };
+    x.ontimeout = function(){ fin(null); };
+    x.send();
+  }catch(e){ fin(null); }
+}
+function bootFeed(){
+  try{
+    var raw = localStorage.getItem(FEED_KEY);
+    if(raw) renderFeed(JSON.parse(raw));
+  }catch(e){}
+  loadFeed();
+}
 function switchTab(name){
   var pages = document.querySelectorAll('.page');
   for(var i = 0; i < pages.length; i++) pages[i].classList.toggle('on', pages[i].id === 'page-' + name);
@@ -565,6 +649,8 @@ for(var i = 0; i < tabs.length; i++){
   tabs[i].onclick = function(){ switchTab(this.getAttribute('data-tab')); };
 }
 buildFolders();
+bootFeed();
+if(document.getElementById('feed')) setInterval(function(){ loadFeed(); }, 600000);
 document.getElementById('sendNote').onclick = sendNote;
 if(document.getElementById('copyNote')) document.getElementById('copyNote').onclick = copyNote;
 (function boot(){
