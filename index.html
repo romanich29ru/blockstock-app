@@ -217,26 +217,37 @@ function loadSnap(){
     return s;
   }catch(e){ return null; }
 }
-var SERVER_SNAP = './snapshot.json';
+// Данные лежат в репозитории: raw обновляется сразу и не ждёт пересборки сайта.
+var DATA_BASE = 'https://raw.githubusercontent.com/romanich29ru/blockstock-app/main/';
+function getJSONc(urls, validate, cb){
+  var i = 0;
+  function next(){
+    if(i >= urls.length){ cb(null); return; }
+    var url = urls[i++];
+    var x = new XMLHttpRequest();
+    var done = false;
+    function fin(v){ if(done) return; done = true; if(v) cb(v); else next(); }
+    try{
+      x.open('GET', url + (url.indexOf('?') < 0 ? '?t=' : '&t=') + Date.now(), true);
+      x.timeout = 12000;
+      x.onload = function(){
+        if(x.status !== 200){ fin(null); return; }
+        try{
+          var v = JSON.parse(x.responseText);
+          fin(validate(v) ? v : null);
+        }catch(e){ fin(null); }
+      };
+      x.onerror = function(){ fin(null); };
+      x.ontimeout = function(){ fin(null); };
+      x.send();
+    }catch(e){ fin(null); }
+  }
+  next();
+}
 function loadServerSnap(cb){
-  var x = new XMLHttpRequest();
-  var done = false;
-  function fin(v){ if(done) return; done = true; cb(v); }
-  try{
-    x.open('GET', SERVER_SNAP + '?t=' + Date.now(), true);
-    x.timeout = 12000;
-    x.onload = function(){
-      if(x.status !== 200){ fin(null); return; }
-      try{
-        var s = JSON.parse(x.responseText);
-        if(!s || !s.ts || !s.q) { fin(null); return; }
-        fin(s);
-      }catch(e){ fin(null); }
-    };
-    x.onerror = function(){ fin(null); };
-    x.ontimeout = function(){ fin(null); };
-    x.send();
-  }catch(e){ fin(null); }
+  getJSONc([DATA_BASE + 'snapshot.json', './snapshot.json'], function(s){
+    return s && s.ts && s.q;
+  }, cb);
 }
 function bestSnap(server){
   var local = loadSnap();
@@ -536,25 +547,14 @@ function renderFeed(data){
   if(st) st.textContent = '· обновлено ' + newsTime(data.ts);
 }
 function loadFeed(cb){
-  var x = new XMLHttpRequest();
-  var done = false;
-  function fin(d){ if(done) return; done = true; if(cb) cb(d); }
-  try{
-    x.open('GET', './news.json?t=' + Date.now(), true);
-    x.timeout = 15000;
-    x.onload = function(){
-      if(x.status !== 200){ fin(null); return; }
-      try{
-        var d = JSON.parse(x.responseText);
-        try{ localStorage.setItem(FEED_KEY, JSON.stringify(d)); }catch(e){}
-        renderFeed(d);
-        fin(d);
-      }catch(e){ fin(null); }
-    };
-    x.onerror = function(){ fin(null); };
-    x.ontimeout = function(){ fin(null); };
-    x.send();
-  }catch(e){ fin(null); }
+  getJSONc([DATA_BASE + 'news.json', './news.json'], function(d){
+    return d && d.items && d.items.length >= 0;
+  }, function(d){
+    if(!d){ if(cb) cb(null); return; }
+    try{ localStorage.setItem(FEED_KEY, JSON.stringify(d)); }catch(e){}
+    renderFeed(d);
+    if(cb) cb(d);
+  });
 }
 function bootFeed(){
   try{
