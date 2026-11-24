@@ -62,6 +62,13 @@
     border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:50;
   }
   .feedstamp{text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);opacity:.8}
+  .sheet{position:fixed;inset:0;background:var(--bg);z-index:120;display:none;flex-direction:column;padding:14px 16px calc(18px + env(safe-area-inset-bottom));overflow-y:auto}
+  .sheet.on{display:flex}
+  .sheet-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+  .sheet-close{flex:0 0 auto;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:15px;line-height:1;cursor:pointer}
+  .sheet-meta{font-size:11px;color:var(--muted);padding-top:8px}
+  .sheet-h{font-size:18px;line-height:1.32;font-weight:700;margin:6px 0 12px}
+  .sheet-p{font-size:14.5px;line-height:1.62;color:var(--text);margin:0 0 12px}
   .news{padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer}
   .news:last-child{border-bottom:0}
   .news:active{opacity:.6}
@@ -169,6 +176,15 @@
   <div class="sec" style="margin-top:0">Живая лента <span class="feedstamp" id="feedStamp"></span></div>
   <div id="feed"><div class="err">загрузка…</div></div>
   <div class="foot">Мосбиржа · Интерфакс · РБК · Финам · Коммерсантъ · Ведомости. Обновляю каждые 10 минут; свежее — сверху.</div>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="sheet-top">
+    <button class="sheet-close" id="sheetClose">✕</button>
+    <div class="sheet-meta" id="sheetMeta"></div>
+  </div>
+  <div id="sheetBody"></div>
+  <button class="btn ghost" id="sheetOpen">Открыть на сайте</button>
 </div>
 
 <div class="tabbar">
@@ -515,6 +531,42 @@ function newsTime(ts){
   if(d.toDateString() === now.toDateString()) return hm;
   return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) + ' ' + hm;
 }
+var FEED_ITEMS = [];
+var SHEET_URL = '';
+function openLink(u){
+  if(!u) return;
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) Telegram.WebApp.openLink(u);
+  else window.open(u, '_blank');
+}
+function openArticle(idx){
+  var it = FEED_ITEMS[idx];
+  if(!it) return;
+  var meta = (it.s || '') + ' · ' + newsTime(it.ts);
+  for(var i = 0; i < (it.tags || []).length; i++) meta += ' · ' + it.tags[i];
+  document.getElementById('sheetMeta').textContent = meta;
+  var parts = String(it.x || '').split(/\n\n+/);
+  var html = '<div class="sheet-h">' + esc(it.t) + '</div>';
+  if(!it.x){
+    html += '<div class="sheet-p" style="color:var(--muted)">Полный текст этой заметки источник не отдаёт. Открой её на сайте — там всё целиком.</div>';
+  }else{
+    for(var k = 0; k < parts.length; k++){
+      var p = parts[k].trim();
+      if(!p) continue;
+      html += '<div class="sheet-p">' + esc(p) + '</div>';
+    }
+  }
+  document.getElementById('sheetBody').innerHTML = html;
+  SHEET_URL = it.u || '';
+  var sh = document.getElementById('sheet');
+  sh.classList.add('on');
+  sh.scrollTop = 0;
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback){
+    try{ Telegram.WebApp.HapticFeedback.impactOccurred('light'); }catch(e){}
+  }
+}
+function closeArticle(){
+  document.getElementById('sheet').classList.remove('on');
+}
 function renderFeed(data){
   var box = document.getElementById('feed');
   if(!data || !data.items || !data.items.length){
@@ -527,20 +579,20 @@ function renderFeed(data){
     var tags = '';
     for(var j = 0; j < (it.tags || []).length; j++) tags += '<span class="news-tag">' + esc(it.tags[j]) + '</span>';
     var fresh = (Date.now() - it.ts) < 3600000;
-    html += '<div class="news" data-url="' + esc(it.u || '') + '">'
+    html += '<div class="news" data-idx="' + i + '" data-url="' + esc(it.u || '') + '">'
       + '<div class="news-top"><span class="t' + (fresh ? ' hot' : '') + '">' + newsTime(it.ts) + '</span>'
       + '<span class="s">' + esc(it.s || '') + '</span></div>'
       + '<div class="news-t">' + esc(it.t) + tags + '</div></div>';
   }
   html += '</div>';
   box.innerHTML = html;
+  FEED_ITEMS = data.items;
   var nodes = box.querySelectorAll('.news');
   for(var k = 0; k < nodes.length; k++){
     nodes[k].onclick = function(){
-      var u = this.getAttribute('data-url');
-      if(!u) return;
-      if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) Telegram.WebApp.openLink(u);
-      else window.open(u, '_blank');
+      var idx = parseInt(this.getAttribute('data-idx'), 10);
+      if(!isNaN(idx)) { openArticle(idx); return; }
+      openLink(this.getAttribute('data-url'));
     };
   }
   var st = document.getElementById('feedStamp');
@@ -653,6 +705,8 @@ bootFeed();
 if(document.getElementById('feed')) setInterval(function(){ loadFeed(); }, 600000);
 document.getElementById('sendNote').onclick = sendNote;
 if(document.getElementById('copyNote')) document.getElementById('copyNote').onclick = copyNote;
+document.getElementById('sheetClose').onclick = closeArticle;
+document.getElementById('sheetOpen').onclick = function(){ openLink(SHEET_URL); };
 (function boot(){
   var s = loadSnap() || (typeof BAKED !== 'undefined' ? BAKED : null);
   if(s){
