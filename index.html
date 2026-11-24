@@ -467,7 +467,8 @@ function fetchIndex(){
     var md = parseBlock(json,'marketdata');
     if(!md.rows.length){ if(lastIdx) paintIdx(lastIdx); return; }
     var i = md.idx, row = md.rows[0];
-    lastIdx = {value: row[i.CURRENTVALUE], chg: row[i.LASTCHANGEPRCNT]};
+    var chgVal = (i.LASTCHANGEPRC !== undefined) ? row[i.LASTCHANGEPRC] : row[i.LASTCHANGEPRCNT];
+    lastIdx = {value: row[i.CURRENTVALUE], chg: chgVal};
     paintIdx(lastIdx);
   });
 }
