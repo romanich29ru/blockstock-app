@@ -269,6 +269,24 @@ function agoText(ts){
   var dt = new Date(ts);
   return dt.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) + ' ' + dt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
 }
+function mskNow(){
+  var now = new Date();
+  return new Date(now.getTime() + now.getTimezoneOffset()*60000 + 3*3600000);
+}
+// Расписание MOEX (МСК, будни): утро 06:50–09:50, основная 10:00–18:40, вечер 19:00–23:50.
+function marketState(){
+  var t = mskNow();
+  var day = t.getDay();
+  var m = t.getHours()*60 + t.getMinutes();
+  if(day === 0 || day === 6) return {open:false, label:'выходной, торги с понедельника 06:50'};
+  if(m >= 410 && m < 590) return {open:true,  label:'утренняя сессия'};
+  if(m >= 600 && m < 1120) return {open:true, label:'основная сессия'};
+  if(m >= 1140 && m < 1430) return {open:true, label:'вечерняя сессия'};
+  if(m < 410) return {open:false, label:'торги откроются в 06:50'};
+  if(m >= 590 && m < 600) return {open:false, label:'перерыв до 10:00'};
+  if(m >= 1120 && m < 1140) return {open:false, label:'аукцион закрытия, вечерняя сессия с 19:00'};
+  return {open:false, label:'торги закрыты до завтра 06:50'};
+}
 function setBanner(text, kind){
   var b = document.getElementById('banner');
   if(!text){ b.style.display = 'none'; b.className = 'banner'; b.innerHTML = ''; return; }
@@ -449,7 +467,10 @@ function refresh(){
           if(s.idx) { lastIdx = s.idx; paintIdx(s.idx); }
           var fromServer = server && s.ts === server.ts;
           var mins = Math.round((Date.now() - s.ts) / 60000);
-          if(fromServer && mins <= 45){
+          var msE = marketState();
+          if(!msE.open && mins > 20){
+            setBanner('Торги не идут · ' + msE.label + '. Данные от <b>' + agoText(s.ts) + '</b> — свежие придут после открытия.', 'info');
+          }else if(fromServer && mins <= 45){
             setBanner('Данные с сервера · обновлено <b>' + agoText(s.ts) + '</b>. Прямой доступ к MOEX с телефона закрыт сертификатом — обновляю через сервер каждые 15 мин.', 'info');
           }else{
             setBanner('Нет связи с MOEX · показаны сохранённые данные (<b>' + agoText(s.ts) + '</b>). Пробую снова каждые 30 с.', 'warn');
@@ -803,8 +824,10 @@ document.getElementById('sheetOpen').onclick = function(){ openLink(SHEET_URL); 
       renderPos(s.q, s.tech);
       renderMarket(s.q, s.tech);
       if(s.idx){ lastIdx = s.idx; paintIdx(lastIdx); }
-      setBanner('Показаны сохранённые данные · <b>' + agoText(s.ts) + '</b>. Обновляю…', 'info');
-      document.getElementById('stamp').textContent = 'кэш от ' + agoText(s.ts);
+      var msB = marketState();
+      var tailB = msB.open ? 'Обновляю…' : msB.label;
+      setBanner('Показаны сохранённые данные · <b>' + agoText(s.ts) + '</b>. ' + tailB, 'info');
+      document.getElementById('stamp').textContent = 'кэш от ' + agoText(s.ts) + ' · ' + msB.label;
     }catch(e){}
   }
   loadServerSnap(function(server){
@@ -815,8 +838,9 @@ document.getElementById('sheetOpen').onclick = function(){ openLink(SHEET_URL); 
       renderPos(server.q, server.tech);
       renderMarket(server.q, server.tech);
       if(server.idx){ lastIdx = server.idx; paintIdx(server.idx); }
-      setBanner('Данные с сервера · обновлено <b>' + agoText(server.ts) + '</b>. Подтягиваю свежие…', 'info');
-      document.getElementById('stamp').textContent = 'сервер · данные от ' + agoText(server.ts);
+      var msS = marketState();
+      setBanner('Данные с сервера · обновлено <b>' + agoText(server.ts) + '</b>. ' + (msS.open ? 'Подтягиваю свежие…' : msS.label), 'info');
+      document.getElementById('stamp').textContent = 'сервер · данные от ' + agoText(server.ts) + ' · ' + msS.label;
     }catch(e){}
   });
   refresh();
