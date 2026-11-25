@@ -7,6 +7,7 @@ on:
       - news.json
       - snapshot.json
       - api.json
+      - metki.json
   workflow_dispatch:
 
 permissions:

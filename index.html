@@ -145,6 +145,10 @@
   <div id="market"><div class="err">загрузка…</div></div>
 </div>
 
+<div class="page" id="page-metki">
+  <iframe id="metkiFrame" src="./metki.html" title="Метки" style="width:100%;height:calc(100vh - 128px);border:0;border-radius:14px;background:#0f1115"></iframe>
+</div>
+
 <div class="page" id="page-notes">
   <div class="sec" style="margin-top:0">Новая заметка в Obsidian</div>
   <div class="card">
@@ -178,6 +182,7 @@
   <button class="tab on" data-tab="pos"><span class="ic">📊</span>Портфель</button>
   <button class="tab" data-tab="mkt"><span class="ic">📈</span>Рынок</button>
   <button class="tab" data-tab="feed"><span class="ic">📰</span>Лента</button>
+  <button class="tab" data-tab="metki"><span class="ic">📐</span>Метки</button>
   <button class="tab" data-tab="notes"><span class="ic">📝</span>Заметки</button>
 </div>
 <script>
@@ -625,6 +630,10 @@ function bootFeed(){
 }
 function switchTab(name){
   if(name === 'notes') loadNotes();
+  if(name === 'metki'){
+    var fr = document.getElementById('metkiFrame');
+    if(fr) fr.src = './metki.html?t=' + Date.now();
+  }
   var pages = document.querySelectorAll('.page');
   for(var i = 0; i < pages.length; i++) pages[i].classList.toggle('on', pages[i].id === 'page-' + name);
   var tabs = document.querySelectorAll('.tab');
