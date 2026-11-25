@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0f1216">
+<title>BlockStock</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#0b0e12; --bg2:#0e1218; --card:#161c24; --card2:#1d252f; --line:#242e3a;
+    --text:#e8eef7; --muted:#8593a5; --up:#2ecc8f; --down:#f2555a; --accent:#4d8ef7;
+    --accent2:#8b5cf6; --radius:16px;
+  }
+  body.light{
+    --bg:#f2f5f9; --bg2:#e9eef5; --card:#ffffff; --card2:#eef3f9; --line:#dce4ee;
+    --text:#111823; --muted:#697787; --up:#0d9b63; --down:#d93a3f; --accent:#2f6fd0;
+    --accent2:#7c4ddb;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--text);
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:16px 13px calc(84px + env(safe-area-inset-bottom));
+    max-width:640px;margin:0 auto;
+  }
+  .hdr{margin-bottom:14px}
+  .hdr .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-.3px}
+  h1 span{color:var(--accent)}
+  .idx{font-size:12.5px;font-weight:600;padding:4px 9px;border-radius:9px;background:var(--card);border:1px solid var(--line);white-space:nowrap}
+  .stamp{color:var(--muted);font-size:11.5px;margin-top:5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:11px;overflow:hidden}
+  .total{
+    background:linear-gradient(140deg,rgba(77,142,247,.14),rgba(139,92,246,.10) 55%,transparent);
+    border:1px solid var(--line);border-radius:20px;padding:17px 16px;margin-bottom:12px;position:relative;
+  }
+  .total .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px}
+  .total .big{font-size:29px;font-weight:750;letter-spacing:-.8px;margin-top:3px;font-variant-numeric:tabular-nums}
+  .total .pnl{font-size:14px;font-weight:650;margin-top:2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+  .mini{background:rgba(255,255,255,.045);border-radius:11px;padding:9px 11px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  body.light .mini{background:rgba(0,0,0,.045)}
+  .mini b{display:block;color:var(--text);font-size:15px;font-weight:700;margin-top:3px;text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .tick{font-weight:750;font-size:16.5px;letter-spacing:.4px}
+  .qty{color:var(--muted);font-size:11.5px;font-weight:500;margin-left:7px;letter-spacing:0}
+  .price{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+  .pnl{font-size:13.5px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .up{color:var(--up)}.down{color:var(--down)}.flat{color:var(--muted)}
+  .meta{color:var(--muted);font-size:11.5px;display:flex;gap:11px;flex-wrap:wrap;font-variant-numeric:tabular-nums;margin-top:3px}
+  .spark{display:block;width:100%;height:38px;margin-top:8px;opacity:.95}
+  .bar{height:5px;background:var(--card2);border-radius:4px;margin-top:10px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:4px;transition:width .5s ease}
+  .lvl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:5px;font-variant-numeric:tabular-nums;gap:8px}
+  .lvl b{color:var(--text);font-weight:600;text-align:right}
+  .sec{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.9px;margin:20px 2px 9px}
+  .tabbar{
+    position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;
+    background:var(--bg2);background:color-mix(in srgb,var(--bg2) 92%,transparent);backdrop-filter:blur(16px);
+    border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:50;
+  }
+  .feedstamp{text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);opacity:.8}
+  .sheet{position:fixed;inset:0;background:var(--bg);z-index:120;display:none;flex-direction:column;padding:14px 16px calc(18px + env(safe-area-inset-bottom));overflow-y:auto}
+  .sheet.on{display:flex}
+  .sheet-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+  .sheet-close{flex:0 0 auto;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:15px;line-height:1;cursor:pointer}
+  .sheet-meta{font-size:11px;color:var(--muted);padding-top:8px}
+  .sheet-h{font-size:18px;line-height:1.32;font-weight:700;margin:6px 0 12px}
+  .sheet-p{font-size:14.5px;line-height:1.62;color:var(--text);margin:0 0 12px}
+  .news{padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .news:last-child{border-bottom:0}
+  .news:active{opacity:.6}
+  .news-top{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);margin-bottom:4px}
+  .news-top .t{font-variant-numeric:tabular-nums}
+  .news-top .s{opacity:.85}
+  .news-top .hot{color:var(--accent);font-weight:650}
+  .news-t{font-size:13.5px;line-height:1.42;color:var(--text)}
+  .news-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:7px;background:var(--card2);color:var(--accent);font-size:10px;font-weight:650;vertical-align:middle}
+  .tab{flex:1;text-align:center;padding:5px 0;border:0;background:none;color:var(--muted);font:inherit;font-size:10.5px;cursor:pointer;transition:color .2s}
+  .tab .ic{display:block;font-size:19px;line-height:1.25;margin-bottom:1px;filter:grayscale(1);opacity:.65;transition:all .2s}
+  .tab.on{color:var(--accent);font-weight:650}
+  .tab.on .ic{filter:none;opacity:1;transform:translateY(-1px)}
+  .page{display:none}.page.on{display:block;animation:fade .22s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  textarea,input[type=text]{
+    width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;
+    color:var(--text);font:inherit;padding:11px 12px;resize:vertical;outline:none;
+  }
+  textarea:focus,input[type=text]:focus{border-color:var(--accent)}
+  textarea{min-height:104px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+  .chip{
+    padding:7px 13px;border-radius:11px;border:1px solid var(--line);background:var(--card);
+    color:var(--muted);font-size:12.5px;cursor:pointer;transition:all .15s;font-family:inherit;
+  }
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:650}
+  .btn{
+    width:100%;padding:14px;border:0;border-radius:14px;font:inherit;font-size:15px;font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;margin-top:12px;
+    box-shadow:0 6px 20px rgba(77,142,247,.28);
+  }
+  .btn:active{transform:scale(.985)}
+  .btn[disabled]{opacity:.55;box-shadow:none}
+  .btn.ghost{background:var(--card2);color:var(--text);box-shadow:none;border:1px solid var(--line);margin-top:8px;font-weight:600;font-size:14px}
+  .steps{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.85}
+  .steps b{color:var(--accent);font-weight:700}
+  .hint{color:var(--muted);font-size:12px;line-height:1.55;margin-top:10px}
+  .err{color:var(--down);font-size:13px;padding:10px 0}
+  .foot{color:var(--muted);font-size:11px;text-align:center;line-height:1.6;margin-top:20px}
+  .banner{display:none;border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.4;margin-bottom:11px;border:1px solid var(--line);background:var(--card2);color:var(--muted)}
+  .banner.warn{border-color:rgba(242,85,90,.35);color:var(--down)}
+  .banner.info{border-color:rgba(77,142,247,.3);color:var(--accent)}
+  .banner b{color:var(--text);font-weight:650}
+  .closed{color:var(--muted);font-size:11.5px;margin-top:2px}
+  .note-item{padding:11px 0;border-bottom:1px solid var(--line)}
+  .note-item:last-child{border-bottom:0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="top"><h1>Block<span>Stock</span></h1><div class="idx" id="idx">—</div></div>
+  <div class="stamp" id="stamp">загрузка котировок…</div>
+  <div class="banner" id="banner"></div>
+</div>
+
+<div class="page on" id="page-pos">
+  <div class="total">
+    <div class="lbl">Стоимость портфеля</div>
+    <div class="big" id="totalVal">—</div>
+    <div class="pnl" id="totalPnl">—</div>
+    <div class="grid2">
+      <div class="mini">Вложено<b id="cost">—</b></div>
+      <div class="mini">Кэш<b id="cash">—</b></div>
+    </div>
+  </div>
+  <div class="sec">Позиции</div>
+  <div id="positions"><div class="err">загрузка…</div></div>
+</div>
+
+<div class="page" id="page-mkt">
+  <div class="sec" style="margin-top:0">Рынок</div>
+  <div id="market"><div class="err">загрузка…</div></div>
+</div>
+
+<div class="page" id="page-notes">
+  <div class="sec" style="margin-top:0">Новая заметка в Obsidian</div>
+  <div class="card">
+    <input type="text" id="noteTitle" placeholder="Заголовок">
+    <textarea id="noteText" placeholder="Текст заметки…"></textarea>
+    <input type="text" id="noteTags" placeholder="теги через запятую (необязательно)">
+    <button class="btn" id="saveNote">Сохранить в Obsidian</button>
+    <button class="btn ghost" id="noteFallback" style="display:none">Отправить в чат с Мией</button>
+    <div class="hint" id="noteHint">Пишется прямо в vault на сервере — через минуту уже на телефоне.</div>
+  </div>
+  <div class="sec">Мои заметки <span id="noteCount" style="color:var(--muted);font-weight:400"></span></div>
+  <div id="noteList"><div class="hint">загрузка…</div></div>
+</div>
+
+<div class="page" id="page-feed">
+  <div class="sec" style="margin-top:0">Живая лента <span class="feedstamp" id="feedStamp"></span></div>
+  <div id="feed"><div class="err">загрузка…</div></div>
+  <div class="foot">Мосбиржа · Интерфакс · РБК · Финам · Коммерсантъ · Ведомости. Обновляю каждые 10 минут; свежее — сверху.</div>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="sheet-top">
+    <button class="sheet-close" id="sheetClose">✕</button>
+    <div class="sheet-meta" id="sheetMeta"></div>
+  </div>
+  <div id="sheetBody"></div>
+  <button class="btn ghost" id="sheetOpen">Открыть на сайте</button>
+</div>
+
+<div class="tabbar">
+  <button class="tab on" data-tab="pos"><span class="ic">📊</span>Портфель</button>
+  <button class="tab" data-tab="mkt"><span class="ic">📈</span>Рынок</button>
+  <button class="tab" data-tab="feed"><span class="ic">📰</span>Лента</button>
+  <button class="tab" data-tab="notes"><span class="ic">📝</span>Заметки</button>
+</div>
+<script>
+var ISS = 'https://iss.moex.com/iss';
+var BOT = 'FotikBotiksBot';
+var POS = [
+  {t:'GAZP', qty:80,  avg:111.43},
+  {t:'VTBR', qty:46,  avg:56.30},
+  {t:'AFKS', qty:400, avg:7.886}
+];
+var WATCH = ['GAZP','VTBR','AFKS','SBER','LKOH','ROSN'];
+var FOLDERS = ['Inbox','Дневник','Дача','Идеи','Планы','Трейдинг','Решения','Рефлексия'];
+var CASH = 460;
+var STORE_KEY = 'bs_v2_pos';
+
+function loadPos(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(raw){ var p = JSON.parse(raw); if(Array.isArray(p) && p.length) return p; }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(POS));
+}
+POS = loadPos();
+try{ var c = localStorage.getItem('bs_cash'); if(c !== null) CASH = parseFloat(c); }catch(e){}
+
+var SNAP_KEY = 'bs_snap_v1';
+var lastIdx = null;
+/* BAKED_START */
+var BAKED = {"ts":1795516295336,"q":{"AFKS":{"last":7.909,"prevChg":-0.62,"high":7.998,"low":7.8,"time":"13:16:32"},"GAZP":{"last":106.34,"prevChg":-0.94,"high":107.7,"low":105.61,"time":"13:16:34"},"LKOH":{"last":5950.5,"prevChg":1.58,"high":5968,"low":5801.5,"time":"13:16:34"},"ROSN":{"last":329.85,"prevChg":0.37,"high":331.75,"low":326.2,"time":"13:16:34"},"SBER":{"last":287.42,"prevChg":-0.77,"high":290.43,"low":286.95,"time":"13:16:34"},"VTBR":{"last":56.135,"prevChg":-0.42,"high":56.55,"low":55.885,"time":"13:16:34"}},"tech":{"GAZP":{"closes":[114.36,117.25,116.8,114.81,116.8,116.75,117.13,114.76,113.14,111.96,112.6,114.12,114.4,114.8,114.14,112.64,116.77,116.5,117,117.46,117.11,115.22,118.19,115.61,112.14,108.21,105.27,106.4,107.35,105.91],"sma5":106.628,"sma10":111.141,"sma20":113.092,"atr":3.3721,"lo20":105.27,"hi20":118.19,"last":105.91},"VTBR":{"closes":[57.465,58.07,57.95,57.735,56.33,56.47,57.03,55.5,55.18,55.28,56.47,56.96,57.17,57.45,57.49,57.95,58.14,61.99,62.295,62.11,61.92,60.78,61.105,60.83,59.185,55.705,54.83,55.65,56.37,56.005],"sma5":55.712,"sma10":58.238,"sma20":58.5202,"atr":1.7414,"lo20":54.83,"hi20":62.295,"last":56.005},"AFKS":{"closes":[7.84,7.939,8.224,8.111,8.37,8.37,8.451,8.288,8.106,8.115,8.593,9.035,9.15,9.243,8.813,8.621,8.965,8.907,9.066,9.127,9.127,8.9,8.899,8.787,8.501,7.804,7.675,7.92,7.958,7.844],"sma5":7.8402,"sma10":8.3415,"sma20":8.6468,"atr":0.3536,"lo20":7.675,"hi20":9.243,"last":7.844},"SBER":{"closes":[296,298.18,297.98,295.08,296.25,296.02,296.7,290.8,292.17,291.41,292.43,293.99,293.98,294.35,295.26,293.1,298.73,298.58,299.83,299.88,299.26,295.53,298.56,297.91,293.87,287.74,286.53,288.19,289.66,286.64],"sma5":287.752,"sma10":292.389,"sma20":294.201,"atr":4.42,"lo20":286.53,"hi20":299.88,"last":286.64},"LKOH":{"closes":[6165.5,6341.5,6291.5,6243.5,6289,6285,6266,6105.5,6046.5,6006.5,6031,6075.5,6092,6091,5997.5,5924.5,6029,6049,6045.5,6052,6033.5,5965,6031.5,5948.5,5892.5,5779,5740,5762.5,5858,5928.5],"sma5":5813.6,"sma10":5893.9,"sma20":5966.3,"atr":113.0,"lo20":5740,"hi20":6092,"last":5928.5},"ROSN":{"closes":[388.9,390.6,388.7,385.9,383.65,384.8,385,373.9,370.8,365.7,363.1,362.7,363.4,363.7,354,347.85,356.2,357.6,356.65,359.15,357.9,352.4,356.15,353.4,344.25,331.95,326.4,329.85,328.65,328.15],"sma5":329.0,"sma10":340.91,"sma20":349.6725,"atr":8.0643,"lo20":326.4,"hi20":363.7,"last":328.15}},"idx":{"value":2361.65,"chg":null}};
+/* BAKED_END */
+function saveSnap(q, t, ix){
+  try{ localStorage.setItem(SNAP_KEY, JSON.stringify({ts: Date.now(), q: q, tech: t, idx: ix || lastIdx})); }catch(e){}
+}
+function loadSnap(){
+  try{
+    var raw = localStorage.getItem(SNAP_KEY);
+    if(!raw) return null;
+    var s = JSON.parse(raw);
+    if(!s || !s.ts || !s.q) return null;
+    return s;
+  }catch(e){ return null; }
+}
+// Данные лежат в репозитории: raw обновляется сразу и не ждёт пересборки сайта.
+var DATA_BASE = 'https://raw.githubusercontent.com/romanich29ru/blockstock-app/main/';
+function getJSONc(urls, validate, cb){
+  var i = 0;
+  function next(){
+    if(i >= urls.length){ cb(null); return; }
+    var url = urls[i++];
+    var x = new XMLHttpRequest();
+    var done = false;
+    function fin(v){ if(done) return; done = true; if(v) cb(v); else next(); }
+    try{
+      x.open('GET', url + (url.indexOf('?') < 0 ? '?t=' : '&t=') + Date.now(), true);
+      x.timeout = 12000;
+      x.onload = function(){
+        if(x.status !== 200){ fin(null); return; }
+        try{
+          var v = JSON.parse(x.responseText);
+          fin(validate(v) ? v : null);
+        }catch(e){ fin(null); }
+      };
+      x.onerror = function(){ fin(null); };
+      x.ontimeout = function(){ fin(null); };
+      x.send();
+    }catch(e){ fin(null); }
+  }
+  next();
+}
+function loadServerSnap(cb){
+  getJSONc([DATA_BASE + 'snapshot.json', './snapshot.json'], function(s){
+    return s && s.ts && s.q;
+  }, cb);
+}
+function bestSnap(server){
+  var local = loadSnap();
+  var baked = (typeof BAKED !== 'undefined') ? BAKED : null;
+  var cands = [server, local, baked].filter(Boolean);
+  if(!cands.length) return null;
+  cands.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+  return cands[0];
+}
+function agoText(ts){
+  var d = Math.round((Date.now() - ts) / 60000);
+  if(d < 1) return 'только что';
+  if(d < 60) return d + ' мин назад';
+  var hh = Math.round(d / 60);
+  if(hh < 6) return hh + ' ч назад';
+  var dt = new Date(ts);
+  return dt.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) + ' ' + dt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+function mskNow(){
+  var now = new Date();
+  return new Date(now.getTime() + now.getTimezoneOffset()*60000 + 3*3600000);
+}
+// Расписание MOEX (МСК, будни): утро 06:50–09:50, основная 10:00–18:40, вечер 19:00–23:50.
+function marketState(){
+  var t = mskNow();
+  var day = t.getDay();
+  var m = t.getHours()*60 + t.getMinutes();
+  if(day === 0 || day === 6) return {open:false, label:'выходной, торги с понедельника 06:50'};
+  if(m >= 410 && m < 590) return {open:true,  label:'утренняя сессия'};
+  if(m >= 600 && m < 1120) return {open:true, label:'основная сессия'};
+  if(m >= 1140 && m < 1430) return {open:true, label:'вечерняя сессия'};
+  if(m < 410) return {open:false, label:'торги откроются в 06:50'};
+  if(m >= 590 && m < 600) return {open:false, label:'перерыв до 10:00'};
+  if(m >= 1120 && m < 1140) return {open:false, label:'аукцион закрытия, вечерняя сессия с 19:00'};
+  return {open:false, label:'торги закрыты до завтра 06:50'};
+}
+function setBanner(text, kind){
+  var b = document.getElementById('banner');
+  if(!text){ b.style.display = 'none'; b.className = 'banner'; b.innerHTML = ''; return; }
+  b.style.display = 'block';
+  b.className = 'banner ' + (kind || '');
+  b.innerHTML = text;
+}
+function allQuotesEmpty(q){
+  for(var k in q){ if(q[k] && q[k].last !== null && q[k].last !== undefined) return false; }
+  return true;
+}
+
+function fmt(n, d){
+  if(n === null || n === undefined || isNaN(n)) return '—';
+  d = (d === undefined) ? 2 : d;
+  return Number(n).toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function money(n){ return fmt(n,2) + ' ₽'; }
+function signed(n){ return (n>0?'+':'') + fmt(n,2); }
+function cls(n){ return n>0?'up':(n<0?'down':'flat'); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function getJSON(url, cb){
+  var x = new XMLHttpRequest();
+  x.open('GET', url, true);
+  x.timeout = 15000;
+  x.onload = function(){
+    if(x.status !== 200){ cb(new Error('HTTP ' + x.status)); return; }
+    try{ cb(null, JSON.parse(x.responseText)); }catch(e){ cb(e); }
+  };
+  x.onerror = function(){ cb(new Error('сеть')); };
+  x.ontimeout = function(){ cb(new Error('таймаут')); };
+  x.send();
+}
+function parseBlock(json, name){
+  var b = json[name], idx = {};
+  for(var i = 0; i < b.columns.length; i++) idx[b.columns[i]] = i;
+  return {idx: idx, rows: b.data};
+}
+function fetchQuotes(tickers, cb){
+  var u = ISS + '/engines/stock/markets/shares/boards/TQBR/securities.json?iss.meta=off&iss.only=marketdata&securities=' + tickers.join(',');
+  getJSON(u, function(err, json){
+    if(err){ cb(err); return; }
+    var md = parseBlock(json, 'marketdata'), out = {};
+    for(var r = 0; r < md.rows.length; r++){
+      var row = md.rows[r], i = md.idx;
+      out[row[i.SECID]] = {
+        last: row[i.LAST], prevChg: row[i.LASTTOPREVPRICE],
+        high: row[i.HIGH], low: row[i.LOW], time: row[i.UPDATETIME]
+      };
+    }
+    cb(null, out);
+  });
+}
+function fetchCandles(ticker, cb){
+  var from = new Date(Date.now() - 70*86400000).toISOString().slice(0,10);
+  var u = ISS + '/engines/stock/markets/shares/boards/TQBR/securities/' + ticker + '/candles.json?from=' + from + '&interval=24&iss.meta=off';
+  getJSON(u, function(err, json){
+    if(err){ cb(err); return; }
+    var c = parseBlock(json,'candles'), closes = [], trs = [];
+    for(var r = 0; r < c.rows.length; r++){
+      var row = c.rows[r], i = c.idx;
+      closes.push(row[i.close]);
+      if(r > 0){
+        var h = row[i.high], l = row[i.low], pc = c.rows[r-1][c.idx.close];
+        trs.push(Math.max(h-l, Math.abs(h-pc), Math.abs(l-pc)));
+      }
+    }
+    function sma(n){
+      if(closes.length < n) return null;
+      var s = 0;
+      for(var k = closes.length-n; k < closes.length; k++) s += closes[k];
+      return s/n;
+    }
+    var atr = null;
+    if(trs.length >= 14){
+      var s2 = 0;
+      for(var k = trs.length-14; k < trs.length; k++) s2 += trs[k];
+      atr = s2/14;
+    }
+    var w = closes.slice(-20);
+    cb(null, {
+      closes: closes.slice(-30), sma5: sma(5), sma10: sma(10), sma20: sma(20),
+      atr: atr, lo20: w.length?Math.min.apply(null,w):null, hi20: w.length?Math.max.apply(null,w):null,
+      last: closes[closes.length-1]
+    });
+  });
+}
+function spark(closes){
+  if(!closes || closes.length < 2) return '';
+  var mn = Math.min.apply(null, closes), mx = Math.max.apply(null, closes);
+  var rng = (mx - mn) || 1, W = 300, H = 38, pts = [];
+  for(var i = 0; i < closes.length; i++){
+    var x = (i/(closes.length-1))*W;
+    var y = H - 2 - ((closes[i]-mn)/rng)*(H-6);
+    pts.push((i?'L':'M') + x.toFixed(1) + ' ' + y.toFixed(1));
+  }
+  var up = closes[closes.length-1] >= closes[0];
+  var col = up ? 'var(--up)' : 'var(--down)';
+  var gid = 'g' + Math.random().toString(36).slice(2,7);
+  return '<svg class="spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">'
+    + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0%" stop-color="' + col + '" stop-opacity="0.28"/>'
+    + '<stop offset="100%" stop-color="' + col + '" stop-opacity="0"/>'
+    + '</linearGradient></defs>'
+    + '<path d="' + pts.join(' ') + ' L' + W + ' ' + H + ' L0 ' + H + ' Z" fill="url(#' + gid + ')"/>'
+    + '<path d="' + pts.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>'
+    + '</svg>';
+}
+
+function renderPos(quotes, tech){
+  var totVal = 0, totCost = 0, html = '';
+  for(var i = 0; i < POS.length; i++){
+    var p = POS[i], q = quotes[p.t] || {}, tg = tech[p.t];
+    var raw = (q.last === null || q.last === undefined) ? null : q.last;
+    var price = raw !== null ? raw : (tg && tg.last ? tg.last : null);
+    var val = price === null ? p.qty*p.avg : p.qty*price;
+    var cost = p.qty*p.avg;
+    totVal += val; totCost += cost;
+    var pnl = val - cost, pc = cost ? pnl/cost*100 : 0;
+    var be = p.avg*1.006;
+    var need = price ? (be/price-1)*100 : null;
+    var w = Math.max(0, Math.min(100, 50 + pc*5));
+    var col = pnl>0?'var(--up)':(pnl<0?'var(--down)':'var(--muted)');
+    var tg = tech[p.t];
+    html += '<div class="card">'
+      + '<div class="row"><div><span class="tick">' + p.t + '</span><span class="qty">' + p.qty + ' шт · вход ' + fmt(p.avg,3) + '</span></div>'
+      + '<div class="price">' + (price===null?'<span style="font-size:13px;color:var(--muted)">нет цены</span>':fmt(price,3)) + '</div></div>'
+      + '<div class="row" style="margin-top:3px"><div class="meta">'
+      + '<span class="' + cls(q.prevChg) + '">' + (q.prevChg===undefined||q.prevChg===null?'—':signed(q.prevChg)+'%') + ' за день</span>'
+      + '<span>' + money(val) + '</span></div>'
+      + '<div class="pnl ' + cls(pnl) + '">' + signed(pnl) + ' ₽ · ' + signed(pc) + '%</div></div>'
+      + (tg ? spark(tg.closes) : '')
+      + '<div class="bar"><i style="width:' + w + '%;background:' + col + '"></i></div>'
+      + '<div class="lvl"><span>безубыток с комиссией</span><b>' + fmt(be,3) + (need===null?'':' · ' + signed(need) + '%') + '</b></div>'
+      + '</div>';
+  }
+  document.getElementById('positions').innerHTML = html || '<div class="card err">Позиций нет</div>';
+  var totPnl = totVal - totCost, totPc = totCost ? totPnl/totCost*100 : 0;
+  document.getElementById('totalVal').textContent = money(totVal + CASH);
+  var te = document.getElementById('totalPnl');
+  te.textContent = signed(totPnl) + ' ₽ · ' + signed(totPc) + '% к вложенному';
+  te.className = 'pnl ' + cls(totPnl);
+  document.getElementById('cost').textContent = money(totCost);
+  document.getElementById('cash').textContent = money(CASH);
+}
+
+function renderMarket(quotes, tech){
+  var html = '';
+  for(var i = 0; i < WATCH.length; i++){
+    var t = WATCH[i], q = quotes[t] || {}, tg = tech[t];
+    var px = (q.last === null || q.last === undefined) ? (tg && tg.last ? tg.last : null) : q.last;
+    var pnlCls = cls(q.prevChg);
+    html += '<div class="card" style="padding:12px 13px">'
+      + '<div class="row"><div class="tick">' + t + '</div>'
+      + '<div><span class="price">' + (px===null?'—':fmt(px,3)) + '</span> '
+      + '<span class="' + pnlCls + '" style="font-size:13px;font-weight:650">' + (q.prevChg===undefined||q.prevChg===null?'':'(' + signed(q.prevChg) + '%)') + '</span></div></div>'
+      + (tg ? spark(tg.closes) : '')
+      + (tg ? '<div class="lvl"><span>SMA5 / 10 / 20</span><b>' + fmt(tg.sma5) + ' / ' + fmt(tg.sma10) + ' / ' + fmt(tg.sma20) + '</b></div>'
+           + '<div class="lvl"><span>ATR14 · 20 дней</span><b>' + fmt(tg.atr,3) + ' · ' + fmt(tg.lo20,3) + '–' + fmt(tg.hi20,3) + '</b></div>' : '')
+      + '</div>';
+  }
+  document.getElementById('market').innerHTML = html || '<div class="err">нет данных</div>';
+}
+
+function refresh(){
+  var all = [];
+  for(var i = 0; i < POS.length; i++) if(all.indexOf(POS[i].t) < 0) all.push(POS[i].t);
+  for(var k = 0; k < WATCH.length; k++) if(all.indexOf(WATCH[k]) < 0) all.push(WATCH[k]);
+
+  fetchQuotes(all, function(err, quotes){
+    if(err){
+      loadServerSnap(function(server){
+        var s = bestSnap(server);
+        if(s){
+          renderPos(s.q, s.tech);
+          renderMarket(s.q, s.tech);
+          if(s.idx) { lastIdx = s.idx; paintIdx(s.idx); }
+          var fromServer = server && s.ts === server.ts;
+          var mins = Math.round((Date.now() - s.ts) / 60000);
+          var msE = marketState();
+          if(!msE.open && mins > 20){
+            setBanner('Торги не идут · ' + msE.label + '. Данные от <b>' + agoText(s.ts) + '</b> — свежие придут после открытия.', 'info');
+          }else if(fromServer && mins <= 45){
+            setBanner('Данные с сервера · обновлено <b>' + agoText(s.ts) + '</b>. Прямой доступ к MOEX с телефона закрыт сертификатом — обновляю через сервер каждые 15 мин.', 'info');
+          }else{
+            setBanner('Нет связи с MOEX · показаны сохранённые данные (<b>' + agoText(s.ts) + '</b>). Пробую снова каждые 30 с.', 'warn');
+          }
+          var srcName = (server && s.ts === server.ts) ? 'сервер' : ((loadSnap() && loadSnap().ts === s.ts) ? 'кэш' : 'вшитый снимок');
+          document.getElementById('stamp').textContent = srcName + ' · данные от ' + agoText(s.ts);
+        }else{
+          setBanner('Нет связи ни с MOEX, ни с сервером приложения. Проверь интернет — повторяю каждые 30 с.', 'warn');
+          document.getElementById('stamp').textContent = 'нет данных';
+        }
+      });
+      return;
+    }
+    var tech = {}, left = all.length;
+    for(var j = 0; j < all.length; j++){
+      (function(t){
+        fetchCandles(t, function(e2, data){
+          if(!e2) tech[t] = data;
+          if(--left === 0) done(quotes, tech);
+        });
+      })(all[j]);
+    }
+    function done(q, tc){
+      renderPos(q, tc);
+      renderMarket(q, tc);
+      var stamp = '';
+      for(var key in q){ stamp = q[key].time; break; }
+      var closed = allQuotesEmpty(q);
+      if(closed){
+        setBanner('Биржа закрыта · котировки не обновляются. Ниже — последние доступные цены и графики за 30 дней.', 'info');
+        document.getElementById('stamp').textContent = 'рынок закрыт' + (stamp ? ' · последняя сделка ' + stamp : '');
+      }else{
+        setBanner('');
+        document.getElementById('stamp').textContent = 'MOEX ' + (stamp||'') + ' · задержка ~15 мин · обновлено '
+          + new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+      }
+      saveSnap(q, tc);
+      fetchIndex();
+    }
+  });
+}
+function fetchIndex(){
+  var u = ISS + '/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json?iss.meta=off&iss.only=marketdata';
+  getJSON(u, function(err, json){
+    if(err){ if(lastIdx) paintIdx(lastIdx); return; }
+    var md = parseBlock(json,'marketdata');
+    if(!md.rows.length){ if(lastIdx) paintIdx(lastIdx); return; }
+    var i = md.idx, row = md.rows[0];
+    var chgVal = (i.LASTCHANGEPRC !== undefined) ? row[i.LASTCHANGEPRC] : row[i.LASTCHANGEPRCNT];
+    lastIdx = {value: row[i.CURRENTVALUE], chg: chgVal};
+    paintIdx(lastIdx);
+  });
+}
+function paintIdx(ix){
+  if(!ix || ix.value === null || ix.value === undefined) return;
+  var el = document.getElementById('idx');
+  var chg = ix.chg;
+  el.textContent = 'IMOEX ' + fmt(ix.value,2) + (chg === null || chg === undefined ? '' : ' · ' + signed(chg) + '%');
+  el.className = 'idx ' + cls(chg || 0);
+}
+var FEED_KEY = 'bs_feed_v1';
+function newsTime(ts){
+  var d = new Date(ts);
+  var now = new Date();
+  var hm = d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  if(d.toDateString() === now.toDateString()) return hm;
+  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) + ' ' + hm;
+}
+var FEED_ITEMS = [];
+var SHEET_URL = '';
+function openLink(u){
+  if(!u) return;
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) Telegram.WebApp.openLink(u);
+  else window.open(u, '_blank');
+}
+function openArticle(idx){
+  var it = FEED_ITEMS[idx];
+  if(!it) return;
+  var meta = (it.s || '') + ' · ' + newsTime(it.ts);
+  for(var i = 0; i < (it.tags || []).length; i++) meta += ' · ' + it.tags[i];
+  document.getElementById('sheetMeta').textContent = meta;
+  var parts = String(it.x || '').split(/\n\n+/);
+  var html = '<div class="sheet-h">' + esc(it.t) + '</div>';
+  if(!it.x){
+    html += '<div class="sheet-p" style="color:var(--muted)">Полный текст этой заметки источник не отдаёт. Открой её на сайте — там всё целиком.</div>';
+  }else{
+    for(var k = 0; k < parts.length; k++){
+      var p = parts[k].trim();
+      if(!p) continue;
+      html += '<div class="sheet-p">' + esc(p) + '</div>';
+    }
+  }
+  document.getElementById('sheetBody').innerHTML = html;
+  SHEET_URL = it.u || '';
+  var sh = document.getElementById('sheet');
+  sh.classList.add('on');
+  sh.scrollTop = 0;
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback){
+    try{ Telegram.WebApp.HapticFeedback.impactOccurred('light'); }catch(e){}
+  }
+}
+function closeArticle(){
+  document.getElementById('sheet').classList.remove('on');
+}
+function renderFeed(data){
+  var box = document.getElementById('feed');
+  if(!data || !data.items || !data.items.length){
+    box.innerHTML = '<div class="err">Лента пока пуста — новости появятся в течение дня.</div>';
+    return;
+  }
+  var html = '<div class="card">';
+  for(var i = 0; i < data.items.length; i++){
+    var it = data.items[i];
+    var tags = '';
+    for(var j = 0; j < (it.tags || []).length; j++) tags += '<span class="news-tag">' + esc(it.tags[j]) + '</span>';
+    var fresh = (Date.now() - it.ts) < 3600000;
+    html += '<div class="news" data-idx="' + i + '" data-url="' + esc(it.u || '') + '">'
+      + '<div class="news-top"><span class="t' + (fresh ? ' hot' : '') + '">' + newsTime(it.ts) + '</span>'
+      + '<span class="s">' + esc(it.s || '') + '</span></div>'
+      + '<div class="news-t">' + esc(it.t) + tags + '</div></div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
+  FEED_ITEMS = data.items;
+  var nodes = box.querySelectorAll('.news');
+  for(var k = 0; k < nodes.length; k++){
+    nodes[k].onclick = function(){
+      var idx = parseInt(this.getAttribute('data-idx'), 10);
+      if(!isNaN(idx)) { openArticle(idx); return; }
+      openLink(this.getAttribute('data-url'));
+    };
+  }
+  var st = document.getElementById('feedStamp');
+  if(st) st.textContent = '· обновлено ' + newsTime(data.ts);
+}
+function loadFeed(cb){
+  getJSONc([DATA_BASE + 'news.json', './news.json'], function(d){
+    return d && d.items && d.items.length >= 0;
+  }, function(d){
+    if(!d){ if(cb) cb(null); return; }
+    try{ localStorage.setItem(FEED_KEY, JSON.stringify(d)); }catch(e){}
+    renderFeed(d);
+    if(cb) cb(d);
+  });
+}
+function bootFeed(){
+  try{
+    var raw = localStorage.getItem(FEED_KEY);
+    if(raw) renderFeed(JSON.parse(raw));
+  }catch(e){}
+  loadFeed();
+}
+function switchTab(name){
+  if(name === 'notes') loadNotes();
+  var pages = document.querySelectorAll('.page');
+  for(var i = 0; i < pages.length; i++) pages[i].classList.toggle('on', pages[i].id === 'page-' + name);
+  var tabs = document.querySelectorAll('.tab');
+  for(var j = 0; j < tabs.length; j++) tabs[j].classList.toggle('on', tabs[j].getAttribute('data-tab') === name);
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback){
+    try{ Telegram.WebApp.HapticFeedback.selectionChanged(); }catch(e){}
+  }
+}
+
+var API_BASE = '';
+var NOTES = [];
+function tgInit(){
+  try{
+    if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) return Telegram.WebApp.initData;
+  }catch(e){}
+  return '';
+}
+function apiReq(method, path, body, cb){
+  if(!API_BASE){ cb({ok:false, e:'no-api'}); return; }
+  var x = new XMLHttpRequest();
+  var done = false;
+  function fin(v){ if(done) return; done = true; cb(v); }
+  try{
+    x.open(method, API_BASE + path, true);
+    x.timeout = 15000;
+    if(method === 'POST') x.setRequestHeader('content-type', 'application/json');
+    x.onload = function(){
+      try{ fin(JSON.parse(x.responseText)); }catch(e){ fin({ok:false, e:'bad-json'}); }
+    };
+    x.onerror = function(){ fin({ok:false, e:'net'}); };
+    x.ontimeout = function(){ fin({ok:false, e:'timeout'}); };
+    x.send(body ? JSON.stringify(body) : null);
+  }catch(e){ fin({ok:false, e:'xhr'}); }
+}
+function loadApiBase(cb){
+  if(API_BASE){ cb(true); return; }
+  getJSONc([DATA_BASE + 'api.json'], function(d){ return d && d.url; }, function(d){
+    if(d && d.url) API_BASE = String(d.url).replace(/\/$/, '');
+    cb(!!API_BASE);
+  });
+}
+function fmtNoteDate(ts){
+  try{
+    var d = new Date(ts);
+    var day = ('0'+d.getDate()).slice(-2), mon = ('0'+(d.getMonth()+1)).slice(-2);
+    var hh = ('0'+d.getHours()).slice(-2), mm = ('0'+d.getMinutes()).slice(-2);
+    return day + '.' + mon + ' ' + hh + ':' + mm;
+  }catch(e){ return ''; }
+}
+function renderNoteList(items){
+  NOTES = items || [];
+  var box = document.getElementById('noteList');
+  var cnt = document.getElementById('noteCount');
+  if(cnt) cnt.textContent = NOTES.length ? '(' + NOTES.length + ')' : '';
+  if(!NOTES.length){
+    box.innerHTML = '<div class="card"><div class="hint" style="margin:0">Пока пусто. Напиши первую — она появится здесь и в Obsidian.</div></div>';
+    return;
+  }
+  var html = '<div class="card" style="padding:0 14px">';
+  for(var i = 0; i < NOTES.length; i++){
+    var it = NOTES[i];
+    html += '<div class="news" data-note="' + i + '" style="border-bottom:' + (i === NOTES.length-1 ? '0' : '1px solid var(--line)') + '">';
+    html += '<div class="news-t">' + esc(it.t) + '</div>';
+    if(it.x) html += '<div class="news-x">' + esc(it.x) + '</div>';
+    html += '<div class="news-m">' + fmtNoteDate(it.ts) + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
+  var nodes = box.querySelectorAll('.news');
+  for(var k = 0; k < nodes.length; k++){
+    nodes[k].onclick = function(){
+      var idx = parseInt(this.getAttribute('data-note'), 10);
+      if(!isNaN(idx)) openNote(idx);
+    };
+  }
+}
+function loadNotes(){
+  var init = tgInit();
+  var box = document.getElementById('noteList');
+  if(!init){
+    box.innerHTML = '<div class="card"><div class="hint" style="margin:0">Заметки открываются внутри Telegram: запусти приложение из чата с Мией, и список появится.</div></div>';
+    return;
+  }
+  loadApiBase(function(ok){
+    if(!ok){
+      box.innerHTML = '<div class="card"><div class="hint" style="margin:0">Сервер заметок сейчас недоступен. Попробуй через минуту — заметки не потеряются.</div></div>';
+      return;
+    }
+    apiReq('GET', '/api/notes?limit=25&init=' + encodeURIComponent(init), null, function(res){
+      if(!res || !res.ok){
+        box.innerHTML = '<div class="card"><div class="hint" style="margin:0">Не получилось загрузить список. Потяни вкладку ещё раз.</div></div>';
+        return;
+      }
+      renderNoteList(res.items || []);
+    });
+  });
+}
+function openNote(idx){
+  var it = NOTES[idx];
+  if(!it) return;
+  var init = tgInit();
+  document.getElementById('sheetMeta').textContent = 'Заметка · ' + fmtNoteDate(it.ts);
+  document.getElementById('sheetBody').innerHTML = '<div class="sheet-h">' + esc(it.t) + '</div>' +
+    '<div class="sheet-p" style="color:var(--muted)">загрузка…</div>';
+  SHEET_URL = '';
+  var sh = document.getElementById('sheet');
+  sh.classList.add('on');
+  sh.scrollTop = 0;
+  apiReq('GET', '/api/note?init=' + encodeURIComponent(init) + '&id=' + encodeURIComponent(it.id), null, function(res){
+    var body = document.getElementById('sheetBody');
+    if(!res || !res.ok){
+      body.innerHTML = '<div class="sheet-h">' + esc(it.t) + '</div><div class="sheet-p">' + esc(it.x || '') + '</div>';
+      return;
+    }
+    var parts = String(res.x || '').split(/\n\n+/);
+    var html = '<div class="sheet-h">' + esc(it.t) + '</div>';
+    for(var i = 0; i < parts.length; i++){
+      var p = parts[i].trim();
+      if(p) html += '<div class="sheet-p">' + esc(p) + '</div>';
+    }
+    body.innerHTML = html;
+  });
+}
+function noteChatUrl(){
+  var title = document.getElementById('noteTitle').value.trim();
+  var text = document.getElementById('noteText').value.trim();
+  var tags = document.getElementById('noteTags').value.trim();
+  var payload = 'В vault → Inbox';
+  if(tags) payload += ' #' + tags.split(',').map(function(s){return s.trim();}).filter(Boolean).join(' #');
+  payload += ': ' + (title ? title + ' — ' : '') + text;
+  return 'https://t.me/' + BOT + '?text=' + encodeURIComponent(payload);
+}
+function showFallback(){
+  var b = document.getElementById('noteFallback');
+  if(b) b.style.display = '';
+}
+function saveNote(){
+  var title = document.getElementById('noteTitle').value.trim();
+  var text = document.getElementById('noteText').value.trim();
+  var tagsRaw = document.getElementById('noteTags').value.trim();
+  var hint = document.getElementById('noteHint');
+  if(!title && !text){
+    hint.innerHTML = '<span class="down">Пусто: напиши хотя бы заголовок.</span>';
+    return;
+  }
+  var init = tgInit();
+  if(!init){
+    hint.innerHTML = '<span class="down">Нужно открыть приложение из чата с Мией — тогда заметка уйдёт в vault.</span>';
+    return;
+  }
+  var tags = tagsRaw ? tagsRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+  hint.textContent = 'Сохраняю…';
+  loadApiBase(function(ok){
+    if(!ok){ hint.innerHTML = '<span class="down">Сервер недоступен прямо сейчас.</span> Текст остался в поле — можно отправить его мне в чат кнопкой ниже.'; showFallback(); return; }
+    apiReq('POST', '/api/note', {init: init, title: title, text: text, tags: tags}, function(res){
+      if(res && res.ok){
+        hint.innerHTML = '<b>Готово.</b> Заметка в vault: ' + esc(res.id || '');
+        document.getElementById('noteTitle').value = '';
+        document.getElementById('noteText').value = '';
+        document.getElementById('noteTags').value = '';
+        loadNotes();
+      }else{
+        hint.innerHTML = '<span class="down">Не сохранилось (' + esc((res && res.e) || 'ошибка') + ').</span> Текст в поле остался, можно отправить в чат кнопкой ниже.';
+        showFallback();
+      }
+    });
+  });
+}
+
+var tg = window.Telegram && window.Telegram.WebApp;
+if(tg){
+  try{
+    tg.ready(); tg.expand();
+    if(tg.colorScheme === 'light') document.body.classList.add('light');
+  }catch(e){}
+}
+var tabs = document.querySelectorAll('.tab');
+for(var i = 0; i < tabs.length; i++){
+  tabs[i].onclick = function(){ switchTab(this.getAttribute('data-tab')); };
+}
+bootFeed();
+if(document.getElementById('feed')) setInterval(function(){ loadFeed(); }, 600000);
+
+if(document.getElementById('saveNote')) document.getElementById('saveNote').onclick = saveNote;
+if(document.getElementById('noteFallback')) document.getElementById('noteFallback').onclick = function(){
+  var b = document.getElementById('noteFallback');
+  b.style.display = 'none';
+  openLink(noteChatUrl());
+};
+document.getElementById('sheetClose').onclick = closeArticle;
+document.getElementById('sheetOpen').onclick = function(){ openLink(SHEET_URL); };
+(function boot(){
+  var s = loadSnap() || (typeof BAKED !== 'undefined' ? BAKED : null);
+  if(s){
+    try{
+      renderPos(s.q, s.tech);
+      renderMarket(s.q, s.tech);
+      if(s.idx){ lastIdx = s.idx; paintIdx(lastIdx); }
+      var msB = marketState();
+      var tailB = msB.open ? 'Обновляю…' : msB.label;
+      setBanner('Показаны сохранённые данные · <b>' + agoText(s.ts) + '</b>. ' + tailB, 'info');
+      document.getElementById('stamp').textContent = 'кэш от ' + agoText(s.ts) + ' · ' + msB.label;
+    }catch(e){}
+  }
+  loadServerSnap(function(server){
+    if(!server) return;
+    var cur = bestSnap(null);
+    if(cur && (cur.ts||0) >= (server.ts||0)) return;
+    try{
+      renderPos(server.q, server.tech);
+      renderMarket(server.q, server.tech);
+      if(server.idx){ lastIdx = server.idx; paintIdx(server.idx); }
+      var msS = marketState();
+      setBanner('Данные с сервера · обновлено <b>' + agoText(server.ts) + '</b>. ' + (msS.open ? 'Подтягиваю свежие…' : msS.label), 'info');
+      document.getElementById('stamp').textContent = 'сервер · данные от ' + agoText(server.ts) + ' · ' + msS.label;
+    }catch(e){}
+  });
+  refresh();
+})();
+setInterval(refresh, 30000);
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden) refresh();
+});
+</script>
+</body>
+</html>
