@@ -1,93 +1,115 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Метки по бумагам</title>
+<style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0f1115;color:#e8ecf1;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;padding:14px;max-width:560px;margin:0 auto}
-.title{font-size:20px;font-weight:700;margin-bottom:4px}
-.sub{font-size:13px;color:#8b95a5;margin-bottom:20px}
-.card{background:#171a21;border:1px solid #232833;border-radius:18px;padding:18px 20px;margin-bottom:16px}
-.head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
-.tk{font-size:22px;font-weight:800;letter-spacing:.5px}
-.px{font-size:22px;font-weight:700}
-.chg{font-size:14px;font-weight:600;margin-left:8px}
+.title{font-size:19px;font-weight:700;margin-bottom:3px}
+.sub{font-size:12px;color:#8b95a5;margin-bottom:14px}
+.card{background:#171a21;border:1px solid #232833;border-radius:18px;padding:16px 18px;margin-bottom:14px}
+.head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.tk{font-size:21px;font-weight:800;letter-spacing:.5px}
+.px{font-size:21px;font-weight:700}
+.chg{font-size:13.5px;font-weight:600;margin-left:7px}
 .up{color:#37d67a}.down{color:#ff6b6b}
-.dir{font-size:14px;color:#b9c3d1;margin-left:auto}
-.row{display:flex;justify-content:space-between;font-size:13.5px;padding:5px 0;border-bottom:1px solid #1f2430}
+.dir{font-size:13.5px;color:#b9c3d1;margin-left:auto}
+.row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #1f2430;gap:10px}
 .row:last-child{border-bottom:0}
-.k{color:#7f8a9c}
-.v{color:#dfe6ef;font-weight:600}
+.k{color:#7f8a9c;white-space:nowrap}
+.v{color:#dfe6ef;font-weight:600;text-align:right}
 .rng{position:relative;height:8px;background:#222836;border-radius:6px;margin:10px 0 4px}
 .rng-fill{height:100%;background:linear-gradient(90deg,#3b4a63,#5b7bb5);border-radius:6px}
-.rng-dot{position:absolute;top:-3px;width:12px;height:14px;background:#e8ecf1;border-radius:4px}
+.rng-dot{position:absolute;top:-4px;width:12px;height:16px;background:#e8ecf1;border-radius:4px}
 .rng-lab{display:flex;justify-content:space-between;font-size:11.5px;color:#7f8a9c;margin-bottom:6px}
 .tape{margin-top:10px;padding-top:8px;border-top:1px dashed #2a3040}
 .flow{display:flex;height:10px;border-radius:6px;overflow:hidden;margin:8px 0 4px;background:#222836}
 .flow-b{background:#37d67a}.flow-s{background:#ff6b6b}
 .tape-lab{display:flex;justify-content:space-between;font-size:11.5px;color:#7f8a9c;margin-bottom:4px}
-.foot{font-size:11.5px;color:#5f6878;margin-top:6px}
-</style></head><body>
+.foot{font-size:11.5px;color:#5f6878;margin:8px 0 16px;line-height:1.5}
+.stamp{font-size:11.5px;color:#8b95a5;margin-top:2px}
+</style></head>
+<body>
 <div class="title">Метки по бумагам</div>
-<div class="sub">25.11.2026 20:52 МСК · лента сделок MOEX · не инвестиционная рекомендация</div>
+<div class="sub" id="sub">загружаю…</div>
+<div id="cards"><div class="card">загружаю данные…</div></div>
+<div class="foot">Стакан недоступен (только подписчикам MOEX) — читаем ленту сделок.<br>Не инвестиционная рекомендация.</div>
+<script>
+var DATA_BASE = 'https://raw.githubusercontent.com/romanich29ru/blockstock-app/main/';
+var ITEMS = [];
 
-<div class="card">
-  <div class="head">
-    <div class="tk">GAZP</div>
-    <div class="px">102.98<span class="chg up">+1.25%</span></div>
-    <div class="dir">▼ вниз</div>
-  </div>
-  <svg viewBox="0 0 520 90" width="100%" height="90"><polygon points="0,90 0.0,45.7 6.4,65.8 12.8,67.0 19.3,61.5 25.7,59.5 32.1,58.7 38.5,59.2 44.9,77.6 51.4,73.3 57.8,85.1 64.2,84.5 70.6,90.0 77.0,79.6 83.5,67.9 89.9,67.9 96.3,72.2 102.7,72.7 109.1,66.1 115.6,41.4 122.0,27.9 128.4,23.3 134.8,31.9 141.2,31.1 147.7,49.2 154.1,35.7 160.5,48.3 166.9,76.2 173.3,68.1 179.8,65.3 186.2,51.5 192.6,58.1 199.0,47.4 205.4,50.3 211.9,24.4 218.3,23.6 224.7,35.1 231.1,38.0 237.5,40.5 244.0,30.8 250.4,54.9 256.8,45.1 263.2,38.2 269.6,42.3 276.0,50.0 282.5,47.4 288.9,40.0 295.3,44.9 301.7,53.8 308.1,63.3 314.6,53.8 321.0,48.3 327.4,47.7 333.8,42.0 340.2,37.1 346.7,32.2 353.1,27.3 359.5,28.2 365.9,17.0 372.3,26.7 378.8,23.9 385.2,19.0 391.6,10.1 398.0,0.0 404.4,4.0 410.9,5.5 417.3,10.9 423.7,11.2 430.1,10.9 436.5,17.3 443.0,11.5 449.4,6.3 455.8,12.7 462.2,12.9 468.6,14.7 475.1,17.8 481.5,12.1 487.9,16.1 494.3,28.5 500.7,24.2 507.2,16.7 513.6,12.9 520.0,8.9 520,90" fill="rgba(55,214,122,.12)"/><polyline points="0.0,45.7 6.4,65.8 12.8,67.0 19.3,61.5 25.7,59.5 32.1,58.7 38.5,59.2 44.9,77.6 51.4,73.3 57.8,85.1 64.2,84.5 70.6,90.0 77.0,79.6 83.5,67.9 89.9,67.9 96.3,72.2 102.7,72.7 109.1,66.1 115.6,41.4 122.0,27.9 128.4,23.3 134.8,31.9 141.2,31.1 147.7,49.2 154.1,35.7 160.5,48.3 166.9,76.2 173.3,68.1 179.8,65.3 186.2,51.5 192.6,58.1 199.0,47.4 205.4,50.3 211.9,24.4 218.3,23.6 224.7,35.1 231.1,38.0 237.5,40.5 244.0,30.8 250.4,54.9 256.8,45.1 263.2,38.2 269.6,42.3 276.0,50.0 282.5,47.4 288.9,40.0 295.3,44.9 301.7,53.8 308.1,63.3 314.6,53.8 321.0,48.3 327.4,47.7 333.8,42.0 340.2,37.1 346.7,32.2 353.1,27.3 359.5,28.2 365.9,17.0 372.3,26.7 378.8,23.9 385.2,19.0 391.6,10.1 398.0,0.0 404.4,4.0 410.9,5.5 417.3,10.9 423.7,11.2 430.1,10.9 436.5,17.3 443.0,11.5 449.4,6.3 455.8,12.7 462.2,12.9 468.6,14.7 475.1,17.8 481.5,12.1 487.9,16.1 494.3,28.5 500.7,24.2 507.2,16.7 513.6,12.9 520.0,8.9" fill="none" stroke="#37d67a" stroke-width="2.4" stroke-linejoin="round"/></svg>
-  <div class="row"><span class="k">Фаза</span><span class="v">отскок внутри падения · 88% дня</span></div>
-  <div class="rng"><div class="rng-fill" style="width:87.5%"></div><div class="rng-dot" style="left:calc(87.5% - 6px)"></div></div><div class="rng-lab"><span>100.1</span><span>103.39</span></div>
-  <div class="row"><span class="k">Уровни</span><span class="v">поддержка мин5 100.1 · сопротивление SMA5 104.74</span></div>
-  <div class="row"><span class="k">Средние</span><span class="v">SMA5 104.742 · SMA10 109.308 · SMA20 112.401</span></div>
-  <div class="row"><span class="k">Шум (ATR)</span><span class="v">±3.3%</span></div>
-  <div class="tape">
-    <div class="row"><span class="k">Лента</span><span class="v">покупатели выкупают крупные продажи</span></div>
-    <div class="flow"><div class="flow-b" style="width:46.3%"></div><div class="flow-s" style="width:53.7%"></div></div>
-    <div class="tape-lab"><span>покупки 46.3%</span><span>продажи 53.7%</span></div>
-    <div class="row"><span class="k">Δ 15 мин</span><span class="v">-12 640</span></div>
-    <div class="row"><span class="k">Крупные</span><span class="v">B 37 080 / S 61 789</span></div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="head">
-    <div class="tk">VTBR</div>
-    <div class="px">57.35<span class="chg up">+4.27%</span></div>
-    <div class="dir">↘ слабость под SMA20</div>
-  </div>
-  <svg viewBox="0 0 520 90" width="100%" height="90"><polygon points="0,90 0.0,78.5 6.4,90.0 12.8,87.3 19.3,82.6 25.7,72.1 32.1,73.5 38.5,74.5 44.9,81.4 51.4,79.4 57.8,82.2 64.2,82.9 70.6,81.4 77.0,75.5 83.5,53.5 89.9,55.4 96.3,57.4 102.7,67.7 109.1,55.4 115.6,53.5 122.0,41.4 128.4,45.6 134.8,47.4 141.2,53.4 147.7,54.2 154.1,50.3 160.5,57.9 166.9,71.3 173.3,69.2 179.8,60.5 186.2,53.7 192.6,54.2 199.0,55.7 205.4,58.8 211.9,44.4 218.3,43.9 224.7,50.7 231.1,50.7 237.5,52.0 244.0,47.4 250.4,57.1 256.8,52.3 263.2,48.0 269.6,48.1 276.0,54.7 282.5,48.0 288.9,47.1 295.3,52.2 301.7,55.6 308.1,58.9 314.6,55.4 321.0,53.2 327.4,52.7 333.8,49.8 340.2,50.0 346.7,51.7 353.1,46.4 359.5,37.5 365.9,39.5 372.3,39.8 378.8,39.2 385.2,35.0 391.6,23.6 398.0,17.2 404.4,6.1 410.9,0.0 417.3,6.8 423.7,8.1 430.1,9.3 436.5,14.2 443.0,4.4 449.4,0.8 455.8,4.2 462.2,4.2 468.6,14.0 475.1,10.8 481.5,8.3 487.9,11.0 494.3,15.9 500.7,12.8 507.2,6.9 513.6,3.7 520.0,3.2 520,90" fill="rgba(55,214,122,.12)"/><polyline points="0.0,78.5 6.4,90.0 12.8,87.3 19.3,82.6 25.7,72.1 32.1,73.5 38.5,74.5 44.9,81.4 51.4,79.4 57.8,82.2 64.2,82.9 70.6,81.4 77.0,75.5 83.5,53.5 89.9,55.4 96.3,57.4 102.7,67.7 109.1,55.4 115.6,53.5 122.0,41.4 128.4,45.6 134.8,47.4 141.2,53.4 147.7,54.2 154.1,50.3 160.5,57.9 166.9,71.3 173.3,69.2 179.8,60.5 186.2,53.7 192.6,54.2 199.0,55.7 205.4,58.8 211.9,44.4 218.3,43.9 224.7,50.7 231.1,50.7 237.5,52.0 244.0,47.4 250.4,57.1 256.8,52.3 263.2,48.0 269.6,48.1 276.0,54.7 282.5,48.0 288.9,47.1 295.3,52.2 301.7,55.6 308.1,58.9 314.6,55.4 321.0,53.2 327.4,52.7 333.8,49.8 340.2,50.0 346.7,51.7 353.1,46.4 359.5,37.5 365.9,39.5 372.3,39.8 378.8,39.2 385.2,35.0 391.6,23.6 398.0,17.2 404.4,6.1 410.9,0.0 417.3,6.8 423.7,8.1 430.1,9.3 436.5,14.2 443.0,4.4 449.4,0.8 455.8,4.2 462.2,4.2 468.6,14.0 475.1,10.8 481.5,8.3 487.9,11.0 494.3,15.9 500.7,12.8 507.2,6.9 513.6,3.7 520.0,3.2" fill="none" stroke="#37d67a" stroke-width="2.4" stroke-linejoin="round"/></svg>
-  <div class="row"><span class="k">Фаза</span><span class="v">отскок внутри падения · 89% дня</span></div>
-  <div class="rng"><div class="rng-fill" style="width:88.9%"></div><div class="rng-dot" style="left:calc(88.9% - 6px)"></div></div><div class="rng-lab"><span>54.615</span><span>57.69</span></div>
-  <div class="row"><span class="k">Уровни</span><span class="v">поддержка SMA5 55.83 · сопротивление SMA10 57.67</span></div>
-  <div class="row"><span class="k">Средние</span><span class="v">SMA5 55.826 · SMA10 57.674 · SMA20 58.511</span></div>
-  <div class="row"><span class="k">Шум (ATR)</span><span class="v">±3.3%</span></div>
-  <div class="tape">
-    <div class="row"><span class="k">Лента</span><span class="v">покупатели давят</span></div>
-    <div class="flow"><div class="flow-b" style="width:56.1%"></div><div class="flow-s" style="width:43.9%"></div></div>
-    <div class="tape-lab"><span>покупки 56.1%</span><span>продажи 43.9%</span></div>
-    <div class="row"><span class="k">Δ 15 мин</span><span class="v">+208 110</span></div>
-    <div class="row"><span class="k">Крупные</span><span class="v">B 315 028 / S 260 594</span></div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="head">
-    <div class="tk">AFKS</div>
-    <div class="px">7.987<span class="chg up">+1.41%</span></div>
-    <div class="dir">↘ слабость под SMA20</div>
-  </div>
-  <svg viewBox="0 0 520 90" width="100%" height="90"><polygon points="0,90 0.0,52.9 6.4,77.2 12.8,69.0 19.3,64.0 25.7,58.8 32.1,63.8 38.5,57.2 44.9,77.2 51.4,74.4 57.8,87.6 64.2,87.2 70.6,90.0 77.0,78.2 83.5,70.6 89.9,65.0 96.3,69.7 102.7,71.8 109.1,51.3 115.6,37.6 122.0,16.8 128.4,8.5 134.8,7.8 141.2,19.6 147.7,27.4 154.1,26.7 160.5,31.4 166.9,34.0 173.3,32.1 179.8,26.9 186.2,19.8 192.6,12.3 199.0,18.9 205.4,22.9 211.9,0.0 218.3,6.1 224.7,13.7 231.1,13.2 237.5,16.3 244.0,6.1 250.4,24.6 256.8,17.5 263.2,15.1 269.6,15.4 276.0,30.2 282.5,27.4 288.9,27.9 295.3,29.8 301.7,39.0 308.1,46.5 314.6,43.5 321.0,38.7 327.4,36.6 333.8,34.5 340.2,32.8 346.7,29.5 353.1,25.5 359.5,32.1 365.9,27.9 372.3,33.8 378.8,31.4 385.2,28.6 391.6,26.7 398.0,21.0 404.4,18.2 410.9,23.4 417.3,28.8 423.7,25.5 430.1,27.4 436.5,31.7 443.0,30.7 449.4,14.4 455.8,21.7 462.2,20.3 468.6,28.8 475.1,29.8 481.5,24.8 487.9,28.1 494.3,36.1 500.7,30.9 507.2,29.1 513.6,25.0 520.0,25.7 520,90" fill="rgba(55,214,122,.12)"/><polyline points="0.0,52.9 6.4,77.2 12.8,69.0 19.3,64.0 25.7,58.8 32.1,63.8 38.5,57.2 44.9,77.2 51.4,74.4 57.8,87.6 64.2,87.2 70.6,90.0 77.0,78.2 83.5,70.6 89.9,65.0 96.3,69.7 102.7,71.8 109.1,51.3 115.6,37.6 122.0,16.8 128.4,8.5 134.8,7.8 141.2,19.6 147.7,27.4 154.1,26.7 160.5,31.4 166.9,34.0 173.3,32.1 179.8,26.9 186.2,19.8 192.6,12.3 199.0,18.9 205.4,22.9 211.9,0.0 218.3,6.1 224.7,13.7 231.1,13.2 237.5,16.3 244.0,6.1 250.4,24.6 256.8,17.5 263.2,15.1 269.6,15.4 276.0,30.2 282.5,27.4 288.9,27.9 295.3,29.8 301.7,39.0 308.1,46.5 314.6,43.5 321.0,38.7 327.4,36.6 333.8,34.5 340.2,32.8 346.7,29.5 353.1,25.5 359.5,32.1 365.9,27.9 372.3,33.8 378.8,31.4 385.2,28.6 391.6,26.7 398.0,21.0 404.4,18.2 410.9,23.4 417.3,28.8 423.7,25.5 430.1,27.4 436.5,31.7 443.0,30.7 449.4,14.4 455.8,21.7 462.2,20.3 468.6,28.8 475.1,29.8 481.5,24.8 487.9,28.1 494.3,36.1 500.7,30.9 507.2,29.1 513.6,25.0 520.0,25.7" fill="none" stroke="#37d67a" stroke-width="2.4" stroke-linejoin="round"/></svg>
-  <div class="row"><span class="k">Фаза</span><span class="v">отскок внутри падения · 67% дня</span></div>
-  <div class="rng"><div class="rng-fill" style="width:66.6%"></div><div class="rng-dot" style="left:calc(66.6% - 6px)"></div></div><div class="rng-lab"><span>7.712</span><span>8.125</span></div>
-  <div class="row"><span class="k">Уровни</span><span class="v">поддержка SMA5 7.88 · сопротивление SMA10 8.23</span></div>
-  <div class="row"><span class="k">Средние</span><span class="v">SMA5 7.882 · SMA10 8.23 · SMA20 8.618</span></div>
-  <div class="row"><span class="k">Шум (ATR)</span><span class="v">±4.5%</span></div>
-  <div class="tape">
-    <div class="row"><span class="k">Лента</span><span class="v">продавцы давят</span></div>
-    <div class="flow"><div class="flow-b" style="width:54.6%"></div><div class="flow-s" style="width:45.4%"></div></div>
-    <div class="tape-lab"><span>покупки 54.6%</span><span>продажи 45.4%</span></div>
-    <div class="row"><span class="k">Δ 15 мин</span><span class="v">-64</span></div>
-    <div class="row"><span class="k">Крупные</span><span class="v">B 38 416 / S 23 147</span></div>
-  </div>
-</div>
-<div class="foot">Стакан недоступен (только подписчикам MOEX) — читаем ленту сделок.</div>
+function num(v, d){ if(v === null || v === undefined || isNaN(v)) return '—'; return Number(v).toFixed(d === undefined ? 2 : d).replace(/\.0+$/, ''); }
+function fmtInt(n){ return Number(n || 0).toLocaleString('ru-RU'); }
+function clock(ts){
+  var d = new Date(ts);
+  var day = ('0'+d.getDate()).slice(-2), mon = ('0'+(d.getMonth()+1)).slice(-2);
+  var hh = ('0'+d.getHours()).slice(-2), mm = ('0'+d.getMinutes()).slice(-2);
+  return day + '.' + mon + ' ' + hh + ':' + mm;
+}
+function spark(vals){
+  if(!vals || vals.length < 2) return '';
+  var w = 520, h = 78, lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+  var rng = (hi - lo) || 1, pts = [];
+  for(var i = 0; i < vals.length; i++){
+    pts.push((i/(vals.length-1)*w).toFixed(1) + ',' + (h - (vals[i]-lo)/rng*h).toFixed(1));
+  }
+  var up = vals[vals.length-1] >= vals[0];
+  var color = up ? '#37d67a' : '#ff6b6b';
+  var fill = up ? 'rgba(55,214,122,.12)' : 'rgba(255,107,107,.12)';
+  var area = '0,' + h + ' ' + pts.join(' ') + ' ' + w + ',' + h;
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="' + h + '" preserveAspectRatio="none">' +
+    '<polygon points="' + area + '" fill="' + fill + '"/>' +
+    '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="2.2" stroke-linejoin="round"/></svg>';
+}
+function card(it){
+  var cls = it.chg >= 0 ? 'up' : 'down';
+  var share = (it.flow && it.flow.buy !== null) ? Math.max(0, Math.min(100, it.flow.buy)) : 50;
+  var pos = Math.max(0, Math.min(100, it.pos || 0));
+  var delta = (it.flow && it.flow.delta) || 0;
+  var html = '<div class="card">';
+  html += '<div class="head"><div class="tk">' + it.tk + '</div>';
+  html += '<div class="px">' + num(it.price, 3) + '<span class="chg ' + cls + '">' + (it.chg >= 0 ? '+' : '') + num(it.chg) + '%</span></div>';
+  html += '<div class="dir">' + it.arrow + ' ' + it.dir + '</div></div>';
+  html += spark(it.spark);
+  html += '<div class="row"><span class="k">Фаза</span><span class="v">' + it.phase + ' · ' + it.pos + '% дня</span></div>';
+  html += '<div class="rng"><div class="rng-fill" style="width:' + pos + '%"></div>' +
+          '<div class="rng-dot" style="left:calc(' + pos + '% - 6px)"></div></div>';
+  html += '<div class="rng-lab"><span>' + num(it.low, 3) + '</span><span>' + num(it.high, 3) + '</span></div>';
+  html += '<div class="row"><span class="k">Уровни</span><span class="v">поддержка ' + it.sup + ' · сопротивление ' + it.res + '</span></div>';
+  html += '<div class="row"><span class="k">Средние</span><span class="v">SMA5 ' + num(it.sma5) + ' · SMA10 ' + num(it.sma10) + ' · SMA20 ' + num(it.sma20) + '</span></div>';
+  html += '<div class="row"><span class="k">Шум (ATR)</span><span class="v">±' + num(it.atr, 1) + '%</span></div>';
+  html += '<div class="tape">';
+  html += '<div class="row"><span class="k">Лента</span><span class="v">' + (it.flow ? it.flow.phrase : '—') + '</span></div>';
+  html += '<div class="flow"><div class="flow-b" style="width:' + share + '%"></div><div class="flow-s" style="width:' + (100-share) + '%"></div></div>';
+  html += '<div class="tape-lab"><span>покупки ' + num(share, 1) + '%</span><span>продажи ' + num(100-share, 1) + '%</span></div>';
+  html += '<div class="row"><span class="k">Δ 15 мин</span><span class="v">' + (delta >= 0 ? '+' : '') + fmtInt(delta) + '</span></div>';
+  html += '<div class="row"><span class="k">Крупные</span><span class="v">B ' + fmtInt(it.flow ? it.flow.bbig : 0) + ' / S ' + fmtInt(it.flow ? it.flow.sbig : 0) + '</span></div>';
+  html += '</div></div>';
+  return html;
+}
+function render(d){
+  ITEMS = (d && d.items) || [];
+  var box = document.getElementById('cards');
+  if(!ITEMS.length){ box.innerHTML = '<div class="card">Нет данных — обновлю на следующем прогоне.</div>'; return; }
+  var html = '';
+  for(var i = 0; i < ITEMS.length; i++) html += card(ITEMS[i]);
+  box.innerHTML = html;
+  document.getElementById('sub').textContent = 'данные на ' + clock(d.ts) + ' МСК · лента сделок MOEX';
+}
+function load(){
+  var x = new XMLHttpRequest();
+  x.open('GET', DATA_BASE + 'metki.json?t=' + Date.now(), true);
+  x.timeout = 15000;
+  x.onload = function(){
+    if(x.status !== 200) return;
+    try{ render(JSON.parse(x.responseText)); }catch(e){}
+  };
+  x.onerror = function(){ document.getElementById('sub').textContent = 'нет связи — показываю прошлые данные'; };
+  try{ x.send(); }catch(e){}
+}
+load();
+setInterval(load, 120000);
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) load(); });
+</script>
 </body></html>
